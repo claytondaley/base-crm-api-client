@@ -2468,6 +2468,7 @@ class BaseAPIService(object):
         'tag_ids',
         'owner_id',
         'status_id',
+        'term'
     ]
 
     LEAD_SORTS = [
@@ -2751,7 +2752,7 @@ class BaseAPIService(object):
 
         ARGUMENTS
 
-            lead_info - dict of fields (see CONTACT_PARAMS for valid field names)
+            lead_info - dict of fields (see LEAD_PARAMS for valid field names)
             lead_id - lead being updated
 
         RESPONSE STRUCTURE

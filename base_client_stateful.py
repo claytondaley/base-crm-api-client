@@ -7,7 +7,6 @@ import collections
 import base_client
 from pprint import pformat
 from darts.lib.utils.lru import SynchronizedLRUDict
-from time import sleep
 
 DEFAULT_CACHE = 1
 
@@ -23,7 +22,11 @@ class Feed(collections.Sequence):
         self.pages = ['null']  # Ensure index and pages match
         self.cache = SynchronizedLRUDict(cache)
         self.page_0 = None
-        self.get_page(0)
+        try:
+            self.get_page(0)
+        except IndexError:
+            # Empty first page isn't a problem
+            pass
 
     def __getitem__(self, item):
         """
@@ -92,10 +95,7 @@ class Feed(collections.Sequence):
             self.log("No items, raising IndexError")
             raise IndexError("list index out of range")
         else:
-            if page == 0:
-                self.page_0 = feed_page['items']
-            else:
-                self.cache[page] = feed_page['items']
+            self.cache[page] = feed_page['items']
             return feed_page['items']
 
     def get_feed(self, timestamp):
@@ -107,33 +107,64 @@ class Feed(collections.Sequence):
 
 
 class ContactFeed(Feed):
-    def __init__(self, conn, contact, type=None, cache=DEFAULT_CACHE):
-        self.contact = contact
+    def __init__(self, conn, contact_id, type=None, cache=DEFAULT_CACHE):
+        self.contact_id = contact_id
         Feed.__init__(self, conn=conn, type=type, cache=cache)
 
     def get_feed(self, timestamp):
-        return self.conn._get_feed(contact_id=self.contact, type=self.type, timestamp=timestamp,
+        return self.conn._get_feed(contact_id=self.contact_id, type=self.type, timestamp=timestamp,
                                    format=self.conn.format)
 
 
 class ContactEmailFeed(ContactFeed):
-    def __init__(self, conn, contact, cache=DEFAULT_CACHE):
-        ContactFeed.__init__(self, conn=conn, contact=contact, type='Email', cache=cache)
+    def __init__(self, conn, contact_id, cache=DEFAULT_CACHE):
+        ContactFeed.__init__(self, conn=conn, contact_id=contact_id, type='Email', cache=cache)
 
 
 class ContactNoteFeed(ContactFeed):
-    def __init__(self, conn, contact, cache=DEFAULT_CACHE):
-        ContactFeed.__init__(self, conn=conn, contact=contact, type='Note', cache=cache)
+    def __init__(self, conn, contact_id, cache=DEFAULT_CACHE):
+        ContactFeed.__init__(self, conn=conn, contact_id=contact_id, type='Note', cache=cache)
 
 
 class ContactCallFeed(ContactFeed):
-    def __init__(self, conn, contact, cache=DEFAULT_CACHE):
-        ContactFeed.__init__(self, conn=conn, contact=contact, type='Call', cache=cache)
+    def __init__(self, conn, contact_id, cache=DEFAULT_CACHE):
+        ContactFeed.__init__(self, conn=conn, contact_id=contact_id, type='Call', cache=cache)
 
 
 class ContactTaskFeed(ContactFeed):
-    def __init__(self, conn, contact, cache=DEFAULT_CACHE):
-        ContactFeed.__init__(self, conn=conn, contact=contact, type='Task', cache=cache)
+    def __init__(self, conn, contact_id, cache=DEFAULT_CACHE):
+        ContactFeed.__init__(self, conn=conn, contact_id=contact_id, type='Task', cache=cache)
+
+
+# Leads
+class LeadFeed(Feed):
+    def __init__(self, conn, lead_id, type=None, cache=DEFAULT_CACHE):
+        self.lead_id = lead_id
+        Feed.__init__(self, conn=conn, type=type, cache=cache)
+
+    def get_feed(self, timestamp):
+        return self.conn._get_feed(lead_id=self.lead_id, type=self.type, timestamp=timestamp,
+                                   format=self.conn.format)
+
+
+class LeadEmailFeed(LeadFeed):
+    def __init__(self, conn, lead_id, cache=DEFAULT_CACHE):
+        LeadFeed.__init__(self, conn=conn, lead_id=lead_id, type='Email', cache=cache)
+
+
+class LeadNoteFeed(ContactFeed):
+    def __init__(self, conn, lead_id, cache=DEFAULT_CACHE):
+        LeadFeed.__init__(self, conn=conn, lead_id=lead_id, type='Note', cache=cache)
+
+
+class LeadCallFeed(ContactFeed):
+    def __init__(self, conn, lead_id, cache=DEFAULT_CACHE):
+        LeadFeed.__init__(self, conn=conn, lead_id=lead_id, type='Call', cache=cache)
+
+
+class LeadTaskFeed(ContactFeed):
+    def __init__(self, conn, lead_id, cache=DEFAULT_CACHE):
+        LeadFeed.__init__(self, conn=conn, lead_id=lead_id, type='Task', cache=cache)
 
 
 class BaseObjectFactory(object):
