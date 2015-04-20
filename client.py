@@ -65,6 +65,9 @@ class BaseAPI(object):
             raise ValueError("ID must be set to save(), use create() instead")
 
         data = {'data': entity.params()}
+        if len(data) == 0:
+            raise ValueError("No data to save.")
+
         headers = self.auth.headers(entity.API_VERSION)
         headers['Content-Type'] = 'application/json'
 
@@ -89,6 +92,9 @@ class BaseAPI(object):
             raise ValueError("Contact already exists, use save() instead of create()")
 
         data = {'data': entity.params()}
+        if len(data) == 0:
+            raise ValueError("No data to save.")
+
         headers = self.auth.headers(entity.API_VERSION)
         headers['Content-Type'] = 'application/json'
 

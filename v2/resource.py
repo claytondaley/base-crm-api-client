@@ -25,14 +25,19 @@ class Account(Resource):
         Read-only attributes are proceeded by an underscore
         """
         '_id': int,
-        'name': basestring,
-        'currency': basestring,
-        'time_format': basestring,
-        'timezone': int,
-        'phone': basestring,
+        '_name': basestring,
+        '_currency': basestring,
+        '_time_format': basestring,
+        '_timezone': int,
+        '_phone': basestring,
         '_created_at': basestring,
         '_updated_at': basestring,
     }
+
+    def __init__(self):
+        super(Account, self).__init__()
+        self.__dict__['data']['id'] = 'self'
+
 
 
 class Address(Resource):
@@ -316,6 +321,51 @@ class Note(Resource):
     }
 
 
+class Pipeline(Resource):
+    _PATH = "pipelines"
+    PROPERTIES = {
+        """
+        Read-only attributes are proceeded by an underscore
+        """
+        '_id': int,
+        '_name': basestring,
+        '_created_at': basestring,
+        '_updated_at': basestring,
+    }
+
+
+class Source(Resource):
+    _PATH = "sources"
+    PROPERTIES = {
+        """
+        Read-only attributes are proceeded by an underscore
+        """
+        '_id': int,
+        '_creator_id': int,
+        'name': basestring,
+        '_created_at': basestring,
+        '_updated_at': basestring,
+    }
+
+
+class Stage(Resource):
+    _PATH = "stages"
+    PROPERTIES = {
+        """
+        Read-only attributes are proceeded by an underscore
+        """
+        '_id': int,
+        '_name': basestring,
+        '_category': basestring,
+        '_active': bool,
+        '_position': int,
+        '_likelihood': int,
+        '_pipeline_id': int,
+        '_created_at': basestring,
+        '_updated_at': basestring,
+    }
+
+
 class Tag(Resource):
     _PATH = "tags"
     RESOURCE_TYPES = [
@@ -337,3 +387,66 @@ class Tag(Resource):
         '_created_at': basestring,
         '_updated_at': basestring,
     }
+
+
+class Task(Resource):
+    _PATH = "tasks"
+    RESOURCE_TYPES = [
+        'lead',
+        'contact',
+        'deal',
+    ]
+    PROPERTIES = {
+        """
+        Read-only attributes are proceeded by an underscore
+        """
+        '_id': int,
+        '_creator_id': int,
+        'owner_id': int,
+        'resource_type': {
+            'type': basestring,
+            'in': RESOURCE_TYPES
+        },
+        'resource_id': int,
+        'completed': bool,
+        '_completed_at': basestring,
+        'due_date': basestring,
+        '_overdue': bool,
+        'remind_at': basestring,
+        'content': basestring,
+        '_created_at': basestring,
+        '_updated_at': basestring,
+    }
+
+
+class User(Resource):
+    _PATH = "users"
+    STATUS = [
+        'active',
+        'inactive',
+    ]
+    ROLE = [
+        'user',
+        'admin',
+    ]
+    PROPERTIES = {
+        """
+        Read-only attributes are proceeded by an underscore
+        """
+        '_id': int,
+        '_name': basestring,
+        '_email': basestring,
+        '_status': {
+            'type': basestring,
+            'in': STATUS
+        },
+        '_role': {
+            'type': basestring,
+            'in': ROLE
+        },
+        '_confirmed': bool,
+        '_created_at': basestring,
+        '_updated_at': basestring,
+    }
+
+

@@ -52,7 +52,8 @@ SAMPLES = {
     'int': 23,
     'basestring': 'a special string for you',
     'list': ['a', 'b', 'z'],
-    'dict': {'a': 1, 'b': 'two', 'c': Mock()}
+    'dict': {'a': 1, 'b': 'two', 'c': Mock()},
+    'mock': Mock(),
 }
 
 
@@ -89,10 +90,10 @@ def test_generator_typechecking_setattr():
     setattr should provide type checking based on PROPERTIES definition
     """
     for type in SAMPLES:
-        # Non-matching examples should throw TypeError
+        # Non-matching types should result in TypeError
         for sample in {k: SAMPLES[k] for k in SAMPLES if k != type}:
             stub = ResourceStub()
             yield setattr_typeerror, stub, type, SAMPLES[sample]
         stub = ResourceStub()
-        # Matching example should get set to stub.dirty
+        # Matching types should get set to stub.dirty
         yield setattr_eq, stub, type, SAMPLES[type]
