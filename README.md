@@ -8,8 +8,8 @@ The Python client for BaseCRM reflects a somewhat odd heritage:
      - An enhanced version of this branch (formerly OfficialSupport) can be found under the "official-1.x" branch.
  - By early 2014, it became clear that FutureSimple was not regularly updating their API documents.  To bring the API up to parity with the web application, @claytondaley reviewed the messages exchanged by the BaseCRM web interface and expanded the API client to take advantage of many of these capabilities.
      - In related communications, FutureSimple made it clear that much of this functionality was not set in stone.
-     - Users who wish to continue to use this client will find it in the master-1.x branch, but we assume the functionality will soon be deprecated
-     - @claytondaley also experimented with (stateful) access to the feed in the related stateful branch
+     - Users who wish to continue to use this client will find it in the master-1.x branch, but the API is deprecated
+     - @claytondaley also experimented with (stateful) access to the feed in a "stateful" branch
  - In early 2015, FutureSimple announced an updated (v2) API that integrated many of these features into the official API documentation.
      - Due to substantial improvements in the master-1.x branch, v2 support will be built off this branch.
      - We've also heard that FutureSimple is releasing a [Sync](https://developers.getbase.com/docs/rest/articles/sync) and WebHooks option that may be added to this client.
@@ -57,13 +57,14 @@ The client also comes with a set of resources.  Resources are Python objects tha
     # A list of entities based on a certain filter
     # Valid kwargs can be found at Class.FILTERS
     all_organizations = basecrm.OrganizationSet()
-    
-    
 
-Ask the BaseCRM client to load it:
+These objects contain no magic so you must explicitly ask the API client to act on them when you want to exchange data with the servers:
 
+    # Resources are updated based on the response the API
     base.get(contact_1)
-    base.getpage(all_organizations, page, per_page)
+    
+    # Collections describe a set of Resources   
+    page = base.get_page(all_organizations, page, per_page, order_by)
 
 This makes the low-level API Client a very thin wrapper around the actual API calls.  The syntax is friendlier, but every API call is explicit.
 
@@ -72,7 +73,7 @@ Updates and deletes are similar:
     contact_1 = basecrm.Contact(1)
     base.get(contact_1)
     # Valid properties (keys) and types (values) are found at Class.PROPERTIES
-    contact_1.name = Fred
+    contact_1.name = 'Fred'
     base.save(contact_1)
     # and when you're done
     base.delete(contact_1)
