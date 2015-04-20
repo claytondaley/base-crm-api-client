@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 import json
 import requests
 from authentication import Password, Token
-from prototypes import Resource, Collection
+from prototype import Resource, Collection
 
 __author__ = 'Clayton Daley III'
 __copyright__ = "Copyright 2015, Clayton Daley III"

@@ -4,7 +4,7 @@
 import logging
 logger = logging.getLogger(__name__)
 
-from prototypes import Collection
+from prototype import Collection
 from v2.resource import Organization, Person, Deal, Lead, LossReason, Note, Tag, Contact, DealContact, Pipeline, Source, \
     Stage, User, Task
 

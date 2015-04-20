@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 from client import BaseAPI
 from mock import Mock
 from nose.tools import assert_raises
-from prototypes import Resource, BaseCrmAuthentication
+from prototype import Resource, BaseCrmAuthentication
 
 __author__ = 'Clayton Daley III'
 __copyright__ = "Copyright 2015, Clayton Daley III"

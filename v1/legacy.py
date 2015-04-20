@@ -4,7 +4,7 @@
 import logging
 logger = logging.getLogger(__name__)
 
-from prototypes import _key_coded_dict
+from prototype import _key_coded_dict
 
 __author__ = 'Nathan Pinger, Clayton C. Daley III'
 __copyright__ = "Copyright 2012-2015 Nathan Pinger, Clayton Daley III"

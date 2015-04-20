@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from copy import deepcopy
-from prototypes import ResourceV1, CollectionV1, _key_coded_dict
+from prototype import ResourceV1, CollectionV1, _key_coded_dict
 
 __author__ = 'Clayton Daley III'
 __copyright__ = "Copyright 2015, Clayton Daley III"

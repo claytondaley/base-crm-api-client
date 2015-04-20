@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 import requests
-from prototypes import BaseCrmAuthentication
+from prototype import BaseCrmAuthentication
 
 __author__ = 'Clayton Daley III'
 __copyright__ = "Copyright 2015, Clayton Daley III"

@@ -4,7 +4,7 @@
 import logging
 logger = logging.getLogger(__name__)
 
-from prototypes import Resource
+from prototype import Resource
 
 __author__ = 'Clayton Daley III'
 __copyright__ = "Copyright 2015, Clayton Daley III"
