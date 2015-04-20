@@ -1,8 +1,19 @@
-__author__ = 'Clayton Daley'
+#!/usr/bin/env python
+"""Test the functionality of Prototypes"""
+
+import logging
+logger = logging.getLogger(__name__)
 
 from mock import Mock
 from nose.tools import assert_raises, eq_
 from prototypes import Resource
+
+__author__ = 'Clayton Daley III'
+__copyright__ = "Copyright 2015, Clayton Daley III"
+__license__ = "Apache License 2.0"
+__version__ = "2.0.0"
+__maintainer__ = "Clayton Daley III"
+__status__ = "Development"
 
 
 def getattr_attributeerror(object_, attribute):

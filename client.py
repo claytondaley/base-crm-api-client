@@ -1,4 +1,5 @@
-__author__ = 'Clayton Daley'
+#!/usr/bin/env python
+"""Implements the main client (BaseAPI) for BaseCRM's v2 API"""
 
 import logging
 logger = logging.getLogger(__name__)
@@ -7,6 +8,13 @@ import json
 import requests
 from authentication import Password, Token
 from prototypes import Resource, Collection
+
+__author__ = 'Clayton Daley III'
+__copyright__ = "Copyright 2015, Clayton Daley III"
+__license__ = "Apache License 2.0"
+__version__ = "2.0.0"
+__maintainer__ = "Clayton Daley III"
+__status__ = "Development"
 
 
 def _unicode_dict(d):
@@ -52,7 +60,7 @@ class BaseAPI(object):
 
         if requests.codes.multiple_choices > response.status_code >= requests.codes.ok:
             print("GET SUCCESS:  %s" % response.text)
-            entity.set_data(response.json()['data'])
+            entity.set_data(response.json())
         else:
             print("GET ERROR:  %s" % response.text)
         # entity is mutable, but this simplifies chaining and assignment
@@ -79,7 +87,7 @@ class BaseAPI(object):
 
         if requests.codes.multiple_choices > response.status_code >= requests.codes.ok:
             print("PUT:  %s" % response.text)
-            entity.set_data(response.json()['data'])
+            entity.set_data(response.json())
         else:
             print("PUT ERROR:  %s" % response.text)
         # entity is mutable, but this simplifies chaining and assignment
@@ -106,7 +114,7 @@ class BaseAPI(object):
 
         if requests.codes.multiple_choices > response.status_code >= requests.codes.ok:
             print("POST SUCCESS:  %s" % response.text)
-            entity.set_data(response.json()['data'])
+            entity.set_data(response.json())
         else:
             print("POST ERROR:  %s" % response.text)
         # entity is mutable, but this simplifies chaining and assignment
@@ -164,4 +172,3 @@ class BaseAPI(object):
             return entity.format_page(response.json()['items'])
         else:
             print("GET ERROR:  %s" % response.text)
-

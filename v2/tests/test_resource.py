@@ -1,9 +1,19 @@
+#!/usr/bin/env python
+"""Test the functionality of implemented Resources"""
 
-__author__ = 'Clayton Daley'
+import logging
+logger = logging.getLogger(__name__)
 
 from nose.tools import assert_raises, eq_
 from pprint import pprint
 from v2.resource import Person, Contact, Organization, Deal, Lead, Note, Tag, Account, Address, LossReason
+
+__author__ = 'Clayton Daley III'
+__copyright__ = "Copyright 2015, Clayton Daley III"
+__license__ = "Apache License 2.0"
+__version__ = "2.0.0"
+__maintainer__ = "Clayton Daley III"
+__status__ = "Development"
 
 """
 CONSTRUCTOR BEHAVIOR

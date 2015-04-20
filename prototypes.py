@@ -1,13 +1,31 @@
-from copy import deepcopy
-import requests
-
-__author__ = 'Clayton Daley'
+#!/usr/bin/env python
+"""Provides interfaces and prototypes for BaseAPI components"""
 
 import logging
 logger = logging.getLogger(__name__)
 
 import abc
+from copy import deepcopy
+import requests
 import sys
+
+__author__ = 'Clayton Daley III'
+__copyright__ = "Copyright 2015, Clayton Daley III"
+__license__ = "Apache License 2.0"
+__version__ = "2.0.0"
+__maintainer__ = "Clayton Daley III"
+__status__ = "Development"
+
+
+def _key_coded_dict(d):
+    new_dict = dict()
+    for k, v in d.iteritems():
+        if isinstance(d, dict):
+            for k2, v2 in v.iteritems():
+                new_dict['%s[%s]' % k, k2] = v2
+        else:
+            new_dict[k] = v
+    return new_dict
 
 
 class IBaseCrmAuthentication(object):
@@ -26,7 +44,7 @@ class BaseCrmAuthentication(IBaseCrmAuthentication):
         self._access_token = None
         self._refresh_token = None
 
-    def headers(self, version):
+    def headers(self, version=2):
         if version == 1:
             return {
                 'X-Pipejump-Auth': self._access_token,
@@ -65,9 +83,7 @@ class Entity(object):
     """
     Makes it easy to check if an object is a BaseCRM Entity
     """
-    def URL(self, debug):
-        obj = self.__dict__
-
+    def URL(self, debug=False):
         if debug:
             url = 'https://api.sandbox.getbase.com'
         else:
@@ -85,6 +101,8 @@ class Resource(Entity):
     Entity is the base class for standard BaseCRM API Client entities.
     """
     API_VERSION = 2
+    # Support v1 items nested under items like 'contact'
+    RESPONSE_KEY = 'data'
 
     def __init__(self, entity_id=None):
         if entity_id is not None and not isinstance(entity_id, int):
@@ -143,16 +161,42 @@ class Resource(Entity):
         raise AttributeError("%s not a valid attribute of %s" % (key, self.__class__.__name__))
 
     def set_data(self, data):
+        """
+        Sets the local object to the values indicated in the 'data' array.  For backwards compatibility reasons, this
+        array contains the top-level key.  This must be done because APIv1 responses use a key that's specific to the
+        response type.  For example, an APIv1 contact response is:
+
+            {
+                'contact': {
+                    'name': ...
+                    ...
+                    }
+            }
+
+        Even though APIv2 standardizes on 'data', an APIv2 Entity must process a response like:
+
+            {
+                'data': {
+                    'name': ...
+                    ...
+                    }
+            }
+
+        This function uses the helper format_data() to allow objects to, for example, convert elements of the response
+        into more usable types. For more information on this process, see format_data().
+        """
         # Assign actual data to self
-        self.__dict__['data'] = self.format_data(data)
+        self.__dict__['data'] = self.format_data(data[self.RESPONSE_KEY])
         # Mark data as loaded
         self.__dict__['loaded'] = True
-        # Clear out dirty data
-        self.__dict__['dirty'] = dict()
 
     def format_data(self, data):
         """
-        This function exists to support custom formatting of data objects Address
+        Objects should overload this function to adjust the input, including converting elements into custom types.
+        For example,
+
+         - The v2 Contact object wraps the address up into an Address object
+         - In v1, tags are sent as comma-separated lists that should be exploded into real lists
         """
         return data  # data is mutable, but this simplifies inline assignment
 
@@ -165,9 +209,24 @@ class Resource(Entity):
 class ResourceV1(Resource):
     API_VERSION = 1
     # Needs a different URL builder
-    @property
-    def PATH(self, entity):
-        url = 'https://app.futuresimple.com/apis/%s/api/v%d%s.json' % (self.RESOURCE, self.API_VERSION, self._PATH)
+
+    def URL(self, debug=False):
+        if debug:
+            raise ValueError("BaseCRM's v1 API does not support debug mode.")
+
+        url = 'https://app.futuresimple.com/apis/%s/api/v%d/%s' % (self.RESOURCE, self.API_VERSION, self._PATH)
+        if self.id is not None:
+            url += '/%d' % self.id
+        return url + '.json'
+
+    def params(self):
+        params = {
+            self.RESPONSE_KEY: deepcopy(self.dirty)
+            # e.g. 'contact': {'name': ...}
+        }
+
+        # to generate ?contact[name]=...
+        return _key_coded_dict(params)
 
 
 class Collection(Entity):
@@ -175,6 +234,10 @@ class Collection(Entity):
     Entity is the base class for standard BaseCRM API Client entities.
     """
     API_VERSION = 2
+
+    @property
+    def _PATH(self):
+        return self._ITEM._PATH
 
     def __init__(self, **kwargs):
         self.__dict__['filters'] = dict()
@@ -198,12 +261,12 @@ class Collection(Entity):
         # If needed, ID is encoded in URL
         return params
 
-    def format_data(self, data):
+    def format_page(self, data):
         # Return a page containing API data processed into Resources and Collections
         page = list()
         for record in data:
             entity = self._ITEM()
-            entity.set_data(record['data'])
+            entity.set_data(record)
             page.append(entity)
         return page
 
@@ -212,14 +275,19 @@ class CollectionV1(Collection):
     """
     Tweaks various functions for old v1 resource structure
     """
-    @property
-    def PATH(self, entity):
-        if type == 'contact':
-            url, params = self._build_contact_resource()
-        elif type == 'deal':
-            url, params = self._build_deal_resource()
-        elif type == 'lead':
-            url, params = self._build_lead_resource()
-        else:
-            raise ValueError("Invalid search type.")
+    def URL(self, debug=False):
+        if debug:
+            raise ValueError("BaseCRM's v1 API does not support debug mode.")
+
+        url = 'https://app.futuresimple.com/apis/%s/api/v%d/%s' % (self.RESOURCE, self.API_VERSION, self._PATH)
         return url + '/search.json'
+
+    def params(self):
+        params = {
+            self.RESPONSE_KEY: deepcopy(self.filters)
+            # e.g. 'contact': {'name': ...}
+        }
+
+        # to generate ?contact[name]=...
+        return _key_coded_dict(params)
+

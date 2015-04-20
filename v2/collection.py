@@ -1,7 +1,19 @@
-__author__ = 'Clayton Daley'
+#!/usr/bin/env python
+"""Implements Collections for BaseCRM's v2 API"""
+
+import logging
+logger = logging.getLogger(__name__)
 
 from prototypes import Collection
-from v2.resource import Organization, Person, Deal, Lead, LossReason, Note, Tag, Contact, DealContact
+from v2.resource import Organization, Person, Deal, Lead, LossReason, Note, Tag, Contact, DealContact, Pipeline, Source, \
+    Stage, User, Task
+
+__author__ = 'Clayton Daley III'
+__copyright__ = "Copyright 2015, Clayton Daley III"
+__license__ = "Apache License 2.0"
+__version__ = "2.0.0"
+__maintainer__ = "Clayton Daley III"
+__status__ = "Development"
 
 
 class AddressFilter(Collection):
@@ -23,7 +35,7 @@ class AddressFilter(Collection):
 
 
 class ContactSet(Collection):
-    _PATH = "contacts"
+    _PATH = Contact._PATH
     FILTERS = {
         'ids': list,
         'is_organization': bool,
@@ -82,7 +94,6 @@ class OrganizationSet(ContactSet):
 
 class DealSet(Collection):
     _ITEM = Deal
-    _PATH = "deals"
     FILTERS = {
         'ids': list,
         'creator_id': int,
@@ -148,7 +159,6 @@ class DealContactSet(Collection):
 
 class LeadSet(Collection):
     _ITEM = Lead
-    _PATH = "leads"
     FILTERS = {
         'ids': list,
         'creator_id': int,
@@ -179,7 +189,6 @@ class LeadSet(Collection):
 
 class LossReasonSet(Collection):
     _ITEM = LossReason
-    _PATH = "leads"
     FILTERS = {
         'ids': list,
         'name': basestring,
@@ -194,38 +203,137 @@ class LossReasonSet(Collection):
 
 class NoteSet(Collection):
     _ITEM = Note
-    _PATH = "leads"
     FILTERS = {
-        # 'includes',
+        # includes: basestring,
         'ids': list,
-        'creator_id': basestring,
+        'creator_id': int,
         'q': basestring,
+        'name': basestring,
         'resource_type': {
             'type': basestring,
-            'in': Tag.RESOURCE_TYPES
+            'in': _ITEM.RESOURCE_TYPES
         },
         'resource_id': int,
     }
     ORDERS = [
-        'resource_type',
+        'name',
         'updated_at',
         'created_at'
     ]
 
 
-class NoteSet(Collection):
-    _ITEM = Tag
-    _PATH = "leads"
+class PipelineSet(Collection):
+    _ITEM = Pipeline
     FILTERS = {
         'ids': list,
-        'creator_id': basestring,
+        'name': basestring,
+    }
+    ORDERS = [
+        'id',
+        'name',
+    ]
+
+
+class SourceSet(Collection):
+    _ITEM = Source
+    FILTERS = {
+        'ids': list,
+        'name': basestring,
+    }
+    ORDERS = [
+        'id',
+        'name',
+    ]
+
+
+class StageSet(Collection):
+    _ITEM = Stage
+    FILTERS = {
+        'ids': list,
+        'name': basestring,
+        'pipeline_id': int,
+        'active': bool,
+    }
+    ORDERS = [
+        'id',
+        'name',
+        'category',
+        'position',
+        'likelihood',
+        'pipeline_id',
+    ]
+
+
+class TagSet(Collection):
+    _ITEM = Tag
+    FILTERS = {
+        'ids': list,
+        'creator_id': int,
         'name': basestring,
         'resource_type': {
             'type': basestring,
-            'in': Tag.RESOURCE_TYPES
+            'in': _ITEM.RESOURCE_TYPES
         },
     }
     ORDERS = [
+        'name',
+        'updated_at',
+        'created_at'
+    ]
+
+
+class TaskSet(Collection):
+    _ITEM = Task
+    # The search offers this additional type declaration
+    TYPES = [
+        'floating',
+        'related'
+    ]
+    FILTERS = {
+        'ids': list,
+        'creator_id': int,
+        'owner_id': int,
+        'q': basestring,
+        'type': {
+            'type': basestring,
+            'in': TYPES
+        },
+        'resource_type': {
+            'type': basestring,
+            'in': _ITEM.RESOURCE_TYPES
+        },
+        'resource_id': int,
+        'completed': bool,
+        'overdue': bool,
+        'remind': bool,
+    }
+    ORDERS = [
+        'resource_type',
+        'completed_at',
+        'due_date',
+        'created_at',
+        'updated_at',
+    ]
+
+
+class UserSet(Collection):
+    _ITEM = User
+    FILTERS = {
+        'ids': list,
+        'name': basestring,
+        'email': basestring,
+        'status': {
+            'type': basestring,
+            'in': _ITEM.STATUS
+        },
+        'role': {
+            'type': basestring,
+            'in': _ITEM.ROLE
+        },
+        'confirmed': bool,
+    }
+    ORDERS = [
+        'ids',
         'name',
         'updated_at',
         'created_at'

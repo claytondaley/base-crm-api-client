@@ -1,10 +1,18 @@
-__author__ = 'Clayton Daley'
+#!/usr/bin/env python
+"""Implements Authentication options for BaseCRM's v2 API"""
 
 import logging
 logger = logging.getLogger(__name__)
 
 import requests
 from prototypes import BaseCrmAuthentication
+
+__author__ = 'Clayton Daley III'
+__copyright__ = "Copyright 2015, Clayton Daley III"
+__license__ = "Apache License 2.0"
+__version__ = "2.0.0"
+__maintainer__ = "Clayton Daley III"
+__status__ = "Development"
 
 
 class Password(BaseCrmAuthentication):

@@ -1,21 +1,17 @@
-__author__ = 'Clayton Daley'
+#!/usr/bin/env python
+"""Implements Resources for BaseCRM's v2 API"""
 
 import logging
 logger = logging.getLogger(__name__)
 
-from copy import deepcopy
 from prototypes import Resource
 
-
-def _key_coded_dict(d):
-    new_dict = dict()
-    for k, v in d.iteritems():
-        if isinstance(d, dict):
-            for k2, v2 in v.iteritems():
-                new_dict['%s[%s]' % k, k2] = v2
-        else:
-            new_dict[k] = v
-    return new_dict
+__author__ = 'Clayton Daley III'
+__copyright__ = "Copyright 2015, Clayton Daley III"
+__license__ = "Apache License 2.0"
+__version__ = "2.0.0"
+__maintainer__ = "Clayton Daley III"
+__status__ = "Development"
 
 
 class Account(Resource):
@@ -39,7 +35,6 @@ class Account(Resource):
         self.__dict__['data']['id'] = 'self'
 
 
-
 class Address(Resource):
     PROPERTIES = {
         """
@@ -51,6 +46,9 @@ class Address(Resource):
         'state': basestring,
         'country': basestring,
     }
+
+    def URL(self, debug=False):
+        raise ReferenceError("Address has no dedicated REST endpoint. The object is only found in other Entities.")
 
 
 class Contact(Resource):
@@ -96,10 +94,10 @@ class Contact(Resource):
         super(Contact, self).__init__(entity_id)
 
     def set_data(self, data):
-        for k, v in data.items():
+        for k, v in data['data'].items():
             if k == 'address':
                 address = Address()
-                address.set_data(v)
+                address.set_data({'data': v})  # Nest back in a 'data' key to use default processor
                 data[k] = address
         if data['is_organization']:
             self.__class__ = Organization
@@ -225,7 +223,7 @@ class DealContact(Resource):
     _PATH = "associated_contacts"
 
     @property
-    def URL(self, debug):
+    def URL(self, debug=False):
         return self.data.deal.PATH(debug) + "/%s/%s" % (self.API_VERSION, self._PATH, self.id)
 
     def __init__(self, deal, contact):
@@ -273,10 +271,10 @@ class Lead(Resource):
     def set_data(self, data):
         local = self.__dict__
         local['data'] = dict()
-        for k, v in data.items():
+        for k, v in data['data'].items():
             if k == 'address':
                 address = Address()
-                address.set_data(v)
+                address.set_data({'data': v})
                 local[k] = address
             else:
                 local[k] = v

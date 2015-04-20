@@ -1,18 +1,34 @@
+#!/usr/bin/env python
+"""This contains tests checking that resources product the expected URLs when URL() is called"""
+
+import logging
+logger = logging.getLogger(__name__)
+
 from nose.tools import eq_, assert_raises
-from v2.collection import ContactSet, PersonSet, OrganizationSet, DealSet, LeadSet, NoteSet
+from v2.collection import ContactSet, PersonSet, OrganizationSet, DealSet, LeadSet, NoteSet, LossReasonSet, PipelineSet, \
+    SourceSet, StageSet, TagSet, TaskSet, UserSet
 from v2.resource import Contact, Person, Deal, Lead, Address, Organization, Note, Account, Tag, LossReason, Source, \
     Stage, User, Pipeline, Task
 
-__author__ = 'Clayton Daley'
+__author__ = 'Clayton Daley III'
+__copyright__ = "Copyright 2015, Clayton Daley III"
+__license__ = "Apache License 2.0"
+__version__ = "2.0.0"
+__maintainer__ = "Clayton Daley III"
+__status__ = "Development"
 
 
 PASSING_URL_TESTS = [
     #Class              KWARGS              DEBUG       URL
+    # Self only so no *Set
     [Account,           dict(),             True,       'https://api.sandbox.getbase.com/v2/accounts/self'],
     [Account,           dict(),             False,      'https://api.getbase.com/v2/accounts/self'],
 
+    # Address has not REST endpoint
+
     [ContactSet,        dict(),             True,       'https://api.sandbox.getbase.com/v2/contacts'],
     [ContactSet,        dict(),             False,      'https://api.getbase.com/v2/contacts'],
+    # Contact has special behavior when entity_id is None
     [Contact,           {'entity_id': 1},   True,       'https://api.sandbox.getbase.com/v2/contacts/1'],
     [Contact,           {'entity_id': 1},   False,      'https://api.getbase.com/v2/contacts/1'],
     [Contact,           {'entity_id': 50},  True,       'https://api.sandbox.getbase.com/v2/contacts/50'],
@@ -55,6 +71,8 @@ PASSING_URL_TESTS = [
     [Lead,              {'entity_id': 50},  True,       'https://api.sandbox.getbase.com/v2/leads/50'],
     [Lead,              {'entity_id': 50},  False,      'https://api.getbase.com/v2/leads/50'],
 
+    [LossReasonSet,     dict(),             True,       'https://api.sandbox.getbase.com/v2/loss_reasons'],
+    [LossReasonSet,     dict(),             False,      'https://api.getbase.com/v2/loss_reasons'],
     [LossReason,        dict(),             True,       'https://api.sandbox.getbase.com/v2/loss_reasons'],
     [LossReason,        dict(),             False,      'https://api.getbase.com/v2/loss_reasons'],
     [LossReason,        {'entity_id': 1},   True,       'https://api.sandbox.getbase.com/v2/loss_reasons/1'],
@@ -62,8 +80,8 @@ PASSING_URL_TESTS = [
     [LossReason,        {'entity_id': 50},  True,       'https://api.sandbox.getbase.com/v2/loss_reasons/50'],
     [LossReason,        {'entity_id': 50},  False,      'https://api.getbase.com/v2/loss_reasons/50'],
 
-    [NoteSet,           dict(),             True,       'https://api.sandbox.getbase.com/v2/leads'],
-    [NoteSet,           dict(),             False,      'https://api.getbase.com/v2/leads'],
+    [NoteSet,           dict(),             True,       'https://api.sandbox.getbase.com/v2/notes'],
+    [NoteSet,           dict(),             False,      'https://api.getbase.com/v2/notes'],
     [Note,              dict(),             True,       'https://api.sandbox.getbase.com/v2/notes'],
     [Note,              dict(),             False,      'https://api.getbase.com/v2/notes'],
     [Note,              {'entity_id': 1},   True,       'https://api.sandbox.getbase.com/v2/notes/1'],
@@ -71,6 +89,8 @@ PASSING_URL_TESTS = [
     [Note,              {'entity_id': 50},  True,       'https://api.sandbox.getbase.com/v2/notes/50'],
     [Note,              {'entity_id': 50},  False,      'https://api.getbase.com/v2/notes/50'],
 
+    [PipelineSet,       dict(),             True,       'https://api.sandbox.getbase.com/v2/pipelines'],
+    [PipelineSet,       dict(),             False,      'https://api.getbase.com/v2/pipelines'],
     [Pipeline,          dict(),             True,       'https://api.sandbox.getbase.com/v2/pipelines'],
     [Pipeline,          dict(),             False,      'https://api.getbase.com/v2/pipelines'],
     [Pipeline,          {'entity_id': 1},   True,       'https://api.sandbox.getbase.com/v2/pipelines/1'],
@@ -78,6 +98,8 @@ PASSING_URL_TESTS = [
     [Pipeline,          {'entity_id': 50},  True,       'https://api.sandbox.getbase.com/v2/pipelines/50'],
     [Pipeline,          {'entity_id': 50},  False,      'https://api.getbase.com/v2/pipelines/50'],
 
+    [SourceSet,         dict(),             True,       'https://api.sandbox.getbase.com/v2/sources'],
+    [SourceSet,         dict(),             False,      'https://api.getbase.com/v2/sources'],
     [Source,            dict(),             True,       'https://api.sandbox.getbase.com/v2/sources'],
     [Source,            dict(),             False,      'https://api.getbase.com/v2/sources'],
     [Source,            {'entity_id': 1},   True,       'https://api.sandbox.getbase.com/v2/sources/1'],
@@ -85,6 +107,8 @@ PASSING_URL_TESTS = [
     [Source,            {'entity_id': 50},  True,       'https://api.sandbox.getbase.com/v2/sources/50'],
     [Source,            {'entity_id': 50},  False,      'https://api.getbase.com/v2/sources/50'],
 
+    [StageSet,          dict(),             True,       'https://api.sandbox.getbase.com/v2/stages'],
+    [StageSet,          dict(),             False,      'https://api.getbase.com/v2/stages'],
     [Stage,             dict(),             True,       'https://api.sandbox.getbase.com/v2/stages'],
     [Stage,             dict(),             False,      'https://api.getbase.com/v2/stages'],
     [Stage,             {'entity_id': 1},   True,       'https://api.sandbox.getbase.com/v2/stages/1'],
@@ -92,6 +116,8 @@ PASSING_URL_TESTS = [
     [Stage,             {'entity_id': 50},  True,       'https://api.sandbox.getbase.com/v2/stages/50'],
     [Stage,             {'entity_id': 50},  False,      'https://api.getbase.com/v2/stages/50'],
 
+    [TagSet,            dict(),             True,       'https://api.sandbox.getbase.com/v2/tags'],
+    [TagSet,            dict(),             False,      'https://api.getbase.com/v2/tags'],
     [Tag,               dict(),             True,       'https://api.sandbox.getbase.com/v2/tags'],
     [Tag,               dict(),             False,      'https://api.getbase.com/v2/tags'],
     [Tag,               {'entity_id': 1},   True,       'https://api.sandbox.getbase.com/v2/tags/1'],
@@ -99,6 +125,8 @@ PASSING_URL_TESTS = [
     [Tag,               {'entity_id': 50},  True,       'https://api.sandbox.getbase.com/v2/tags/50'],
     [Tag,               {'entity_id': 50},  False,      'https://api.getbase.com/v2/tags/50'],
 
+    [TaskSet,           dict(),             True,       'https://api.sandbox.getbase.com/v2/tasks'],
+    [TaskSet,           dict(),             False,      'https://api.getbase.com/v2/tasks'],
     [Task,              dict(),             True,       'https://api.sandbox.getbase.com/v2/tasks'],
     [Task,              dict(),             False,      'https://api.getbase.com/v2/tasks'],
     [Task,              {'entity_id': 1},   True,       'https://api.sandbox.getbase.com/v2/tasks/1'],
@@ -106,6 +134,8 @@ PASSING_URL_TESTS = [
     [Task,              {'entity_id': 50},  True,       'https://api.sandbox.getbase.com/v2/tasks/50'],
     [Task,              {'entity_id': 50},  False,      'https://api.getbase.com/v2/tasks/50'],
 
+    [UserSet,           dict(),             True,       'https://api.sandbox.getbase.com/v2/users'],
+    [UserSet,           dict(),             False,      'https://api.getbase.com/v2/users'],
     [User,              dict(),             True,       'https://api.sandbox.getbase.com/v2/users'],
     [User,              dict(),             False,      'https://api.getbase.com/v2/users'],
     [User,              {'entity_id': 1},   True,       'https://api.sandbox.getbase.com/v2/users/1'],
@@ -135,6 +165,8 @@ REFERENCEERROR_URL_TESTS = [
     #Class              KWARGS              DEBUG
     [Address,           {'entity_id': 1},   True],
     [Address,           {'entity_id': 1},   False],
+    [Address,           dict(),             True],
+    [Address,           dict(),             False],
 ]
 
 
@@ -152,5 +184,3 @@ def test_generator_url_referenceerror():
     """
     for case in REFERENCEERROR_URL_TESTS:
         yield url_check_referenceerror, case[0], case[1], case[2]
-
-
