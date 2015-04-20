@@ -56,6 +56,60 @@ class Contact(Resource):
         """
         '_id': int,
         '_creator_id': int,
+        '_owner_id': int,
+        '_is_organization': bool,
+        '_contact_id': int,
+        '_name': basestring,
+        '_first_name': basestring,
+        '_last_name': basestring,
+        '_customer_status': basestring,
+        '_prospect_status': basestring,
+        '_title': basestring,
+        '_description': basestring,
+        '_industry': basestring,
+        '_website': basestring,
+        '_email': basestring,
+        '_phone': basestring,
+        '_mobile': basestring,
+        '_fax': basestring,
+        '_twitter': basestring,
+        '_facebook': basestring,
+        '_linkedin': basestring,
+        '_skype': basestring,
+        '_address': Address,
+        '_tags': list,
+        '_custom_fields': dict,
+        '_created_at': basestring,
+        '_updated_at': basestring,
+    }
+
+    def __init__(self, entity_id=None):
+        if self.__class__.__name__ == "Contact" and entity_id is None:
+            raise TypeError("Contact should only be created when loading an (ambiguous) id.  For any other purpose, " +
+                            "use Person or Organization instead.")
+        # If a user has an ambiguous contact, it must be possible to load that contact by ID
+        super(Contact, self).__init__(entity_id)
+
+    def set_data(self, data):
+        for k, v in data.items():
+            if k == 'address':
+                address = Address()
+                address.set_data(v)
+                data[k] = address
+        if data['is_organization']:
+            self.__class__ = Organization
+        else:
+            self.__class__ = Person
+        return data  # data is mutable, but this simplifies chaining and inline assignment
+
+
+class Person(Contact):
+    PROPERTIES = {
+        """
+        Read-only attributes are proceeded by an underscore
+        """
+        '_id': int,
+        '_creator_id': int,
         'owner_id': int,
         '_is_organization': bool,
         'contact_id': int,
@@ -84,30 +138,7 @@ class Contact(Resource):
     }
 
     def __init__(self, entity_id=None):
-        if self.__class__.__name__ == "Contact" and entity_id is None:
-            raise TypeError("Contact should only be created when loading an (ambiguous) id.  For any other purpose, " +
-                            "use Person or Organization instead.")
-        # If a user has an ambiguous contact, it must be possible to load that contact by ID
-        super(Contact, self).__init__(entity_id)
-
-    def set_data(self, data):
-        for k, v in data.items():
-            if k == 'address':
-                address = Address()
-                address.set_data(v)
-                data[k] = address
-        if data['is_organization']:
-            self.__class__ = Organization
-        else:
-            self.__class__ = Person
-        return data  # data is mutable, but this simplifies chaining and inline assignment
-
-
-class Person(Contact):
-    def __init__(self, entity_id=None):
         super(Person, self).__init__(entity_id)
-        #
-        self.PROPERTIES = deepcopy(Contact.PROPERTIES)
         self.dirty['is_organization'] = False
 
     def params(self):
@@ -124,7 +155,7 @@ class Person(Contact):
 
 
 class Organization(Contact):
-    PROPERTIES = deepcopy(Contact.PROPERTIES).pop('contact_id')
+    PROPERTIES = Contact.PROPERTIES
 
     def __init__(self, entity_id=None):
         super(Organization, self).__init__(entity_id)

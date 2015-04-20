@@ -60,7 +60,7 @@ class ContactSet(Collection):
 
 class PersonSet(ContactSet):
     # Persons have a fixed is_organization
-    FILTERS = {k: Contact.PROPERTIES[k] for k in Contact.PROPERTIES if k != 'is_organization'}
+    FILTERS = {k: ContactSet.FILTERS[k] for k in ContactSet.FILTERS if k != 'is_organization'}
     _ITEM = Person
 
     def params(self):
@@ -71,7 +71,7 @@ class PersonSet(ContactSet):
 
 class OrganizationSet(ContactSet):
     # Organizations cannot have a parent organization (contact_id) and have a fixed is_organization
-    FILTERS = {k: Contact.PROPERTIES[k] for k in Contact.PROPERTIES if k not in ['is_organization', 'contact_id']}
+    FILTERS = {k: ContactSet.FILTERS[k] for k in ContactSet.FILTERS if k not in ['is_organization', 'contact_id']}
     _ITEM = Organization
 
     def params(self):

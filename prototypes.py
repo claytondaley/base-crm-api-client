@@ -99,7 +99,7 @@ class Resource(Entity):
 
     def __setattr__(self, key, value):
         # If the __initialized flag isn't set yet, set the attribute normally
-        if not '_Entity__initialized' in self.__dict__:
+        if not '_Resource__initialized' in self.__dict__:
             self.__dict__[key] = value
             return
         if key in self.PROPERTIES:
@@ -117,7 +117,7 @@ class Resource(Entity):
                 if 'in' in rules and value not in rules['in']:
                     raise ValueError("%s is not a valid value for #s" % value, key)
             # Otherwise, the PROPERTIES value is just the accepted type
-            if not isinstance(value, self.PROPERTIES[key]):
+            elif not isinstance(value, self.PROPERTIES[key]):
                 raise TypeError("%s must be of type %s" % (key, self.PROPERTIES[key].__name__))
             self.dirty[key] = value
         elif '_%s' % key in self.PROPERTIES:
