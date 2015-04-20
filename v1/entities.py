@@ -1,33 +1,11 @@
-import urllib
-import urllib2
-import logging
-import json
+__author__ = 'Clayton Daley'
 
-logger = logging.getLogger(__name__)
-
-
-def _unicode_dict(d):
-    new_dict = dict()
-    for k, v in d.iteritems():
-        new_dict[k] = unicode(v).encode('utf-8')
-    return new_dict
-
-
-def _key_coded_dict(d):
-    new_dict = dict()
-    for k, v in d.iteritems():
-        if isinstance(d, dict):
-            for k2, v2 in v.iteritems():
-                combined_key = k + '[' + k2 + ']'
-                new_dict[combined_key] = v2
-        else:
-            new_dict[k] = v
-    return new_dict
-
+from copy import deepcopy
+from prototypes import ResourceV1, CollectionV1
 
 """
 
-API CHARACTERISTICS
+V1 API CHARACTERISTICS
 
 Due to a relatively low level of standardization among BaseCRM resources, this table has been accumulated
 
@@ -64,163 +42,212 @@ included in the metadata of the previous page.
 """
 
 
-class BaseAPIService(object):
-    FORMAT_OPTIONS = [
-        'native',
-        'json',
-        'xml'
+class Contact(ResourceV1):
+    API_VERSION = 1
+    PATH = "contact"
+    PROPERTIES = [
+        'name',
+        'last_name',
+        'first_name',
+        'is_organisation',
+        'contact_id',
+        'email',
+        'phone',
+        'mobile',
+        'twitter',
+        'skype',
+        'facebook',
+        'linkedin',
+        'address',
+        'city',
+        'country',
+        'title',
+        'description',
+        'industry',
+        'website',
+        'fax',
+        'tag_list',
+        'private',
     ]
 
-    def __init__(self, email=None, password=None, token=None, format='native'):
-        """
-        Authenticate with base, and set the format for response objects.
+    def params(self):
+        pass
 
-        ARGUMENTS
 
-        Credentials:
-            email
-            password
-            token - An existing API token; use either email + password or token
-        Format:
-            format='native' (default) - All public functions return native python objects (generally lists and dicts)
-            format='json' - All public functions return strings of JSON objects
-            format='xml' - All public functions return strings of XML data
-        """
-        if format in self.FORMAT_OPTIONS:
-            self.format = format
-        # We already have a (possibly valid) token
-        if token is not None:
-            self.token = token
-            self.auth_failed = False
-        else:
-            # Get token
-            status, self.token = self._get_login_token(email=email, password=password)
-            if status == "ERROR":
-                # If we get an error, return it.
-                logger.error(self.token)
-                self.auth_failed = True
-            else:
-                self.auth_failed = False
-        if not self.auth_failed:
-            # Set URL header for future requests
-            self.header = {"X-Pipejump-Auth": self.token, "X-Futuresimple-Token": self.token}
+class ContactSet(CollectionV1):
+    API_VERSION = 1
+    _PATH = "contact"
+    FILTERS = {
+        'user_id',
+        'city',  # All lower
+        'region',  # All lower
+        'zip',  # NOT zip_code as listed in aggregate
+        'country',  # All lower
+        'tag_ids',  # Comma (%2C) separated in URL
+        'tags',  # All lower; Comma (%2C) separated in URL
+    }
+    ORDERS = [
+        # Verified not available: organisation_name, mobile, overdue_tasks, phone, unread_emails
+        # Included in return list:
+        'last_name',
+        'first_name',
+        'user_id',
+        'account_id',
+        'title',
+        'created_at',
+        'is_sales_account',
+        'id',
+        'is_organisation',
+        'email',
+        'name',
+        # In sort_value if submitted, otherwise not returned:
+        'last_activity',
+        'calls_to_action,first',
+        'calls_to_action,last'
+    ]
 
-    ##########################
-    # Token Functions
-    ##########################
-    def _get_login_token(self, email, password):
-        """
-        Gets BaseCRM login token
+    def params(self):
+        params = deepcopy(self.filters)
+        if 'city' in params:
+            params['city'] = str(params['city']).lower()
+        if 'region' in params:
+            params['region'] = str(params['region']).lower()
+        if 'country' in params:
+            params['country'] = str(params['country']).lower()
 
-        ARGUMENTS
 
-            email
-            password
+class Lead(ResourceV1):
+    API_VERSION = 1
+    PATH = "lead"
+    PROPERTIES = [
+        'lead_id',
+        'last_name',
+        'company_name',
+        'first_name',
+        'email',
+        'phone',
+        'mobile',
+        'twitter',
+        'skype',
+        'facebook',
+        'linkedin',
+        'street',
+        'city',
+        'region',
+        'zip',
+        'country',
+        'title',
+        'description',
+        # Valid for contacts, check for leads
+        #        'industry',
+        #        'website',
+        #        'fax',
+        #        'tag_list',
+        #        'private',
+    ]
 
-        RESPONSE STRUCTURE
+    def params(self):
+        pass
 
-            token (string)
-        """
-        url_noparam = self._build_resource_url('sales', 1) + '/authentication.json'
-        url_params = urllib.urlencode({
-            'email': email,
-            'password': password,
-        })
 
-        try:
-            data = urllib2.urlopen(url_noparam, url_params).read()
-        except urllib2.HTTPError, e:
-            return "ERROR", "HTTP: %s" % str(e)
-        except urllib2.URLError, e:
-            return "ERROR", "Error URL: %s" % str(e.reason.args[1])
+class LeadSet(CollectionV1):
+    API_VERSION = 1
+    _PATH = "lead"
+    FILTERS = {
+        'tag_ids',
+        'owner_id',
+        'status_id',
+    }
+    ORDERS = [
+        'account_id',
+        'added_on',
+        'company_name',
+        'created_at',
+        'first_name',
+        'id',
+        'last_activity_date',
+        'last_activity',  # Appears to be alias of last_activity_date
+        'last_name',
+        'owner_id',
+        'state',
+        'status_id',
+        'title',
+        #'tag_ids', # Accepted by API but non-functional
+        #'tags', # Accepted by API but non-functional
+        'user_id',
+    ]
 
-        try:
-            dict_data = json.loads(data)
-            token = dict_data["authentication"]["token"]
-        except KeyError:
-            return "ERROR", "Error: No Token Returned"
+    def params(self):
+        params = deepcopy(self.filters)
+        if 'city' in params:
+            params['city'] = str(params['city']).lower()
+        if 'region' in params:
+            params['region'] = str(params['region']).lower()
+        if 'country' in params:
+            params['country'] = str(params['country']).lower()
 
-        return "SUCCESS", token
 
-    ##########################
-    # Helper Functions
-    ##########################
-    def _get_data(self, url_noparam, params):
-        """
-        This function:
-         - urlencodes the params
-         - adds them to the url_noparam
-         - submits the request using GET
-         - returns the data for the resulting URL.
-        If the format is set to 'native', the function assumes the URL is set to json and converts the response using
-        json.loads()
-        """
-        url_params = urllib.urlencode(params)
-        if len(url_params) > 0:
-            url_final = url_noparam + '?' + url_params
-        else:
-            url_final = url_noparam
-        print 'GETing URL %s' % url_final
-        req = urllib2.Request(url_final, headers=self.header)
-        response = urllib2.urlopen(req)
-        data = response.read()
-        if self.format == 'native':
-            data = json.loads(data)
-        return data
+class Deal(ResourceV1):
+    API_VERSION = 1
+    PATH = "deal"
+    PROPERTIES = [
+        'name',
+        'entity_id',
+        'scope',
+        'hot',
+        'deal_tags',
+        'contact_ids',
+        'source_id',
+        'stage',
+    ]
 
-    def _post_data(self, url_noparam, params):
-        """
-        This function:
-         - urlencodes the params
-         - submits the params to the url_noparam using POST
-         - returns the data for the resulting URL.
-        If the format is set to 'native', the function assumes the URL is set to json and converts the response using
-        json.loads()
-        """
-        url_params = urllib.urlencode(params)
-        print 'POSTing URL %s' % url_noparam
-        print '... with params ' + url_params
-        req = urllib2.Request(url_noparam, data=url_params, headers=self.header)
-        response = urllib2.urlopen(req)
-        data = response.read()
-        if self.format == 'native':
-            data = json.loads(data)
-        return data
+    def params(self):
+        pass
 
-    def _put_data(self, url_noparam, params):
-        """
-        This function:
-         - urlencodes the params
-         - submits the params to the url_noparam using PUT
-         - returns the data for the resulting URL.
-        If the format is set to 'native', the function assumes the URL is set to json and converts the response using
-        json.loads()
-        """
-        url_params = urllib.urlencode(params)
-        print 'PUTing URL %s' % url_noparam
-        print '... with params ' + url_params
-        req = urllib2.Request(url_noparam, data=url_params, headers=self.header)
-        req.get_method = lambda: 'PUT'
-        response = urllib2.urlopen(req)
-        data = response.read()
-        if self.format == 'native':
-            data = json.loads(data)
-        return data
 
-    @classmethod
-    def _apply_format(cls, url, format=None):
-        """
-        (DEPRICATAED) This function appends an appropriate extension telling the BaseCRM API to respond in a particular
-        format. The 'native' format uses json at the communication layer and automatically converts the data back to
-        native during the GET/POST/PUT.
-        """
-        if format is not None:
-            if format == 'json' or format == 'native':
-                url += '.json'
-            elif format == '.xml':
-                url += '.xml'
-        return url
+class DealSet(CollectionV1):
+    API_VERSION = 1
+    _PATH = "deal"
+    FILTERS = {
+        'currency',
+        'stage',
+        'tag_ids',
+        # tags (e.g. tag text) not available in deals
+        'user_id',
+        'hot',
+    }
+    ORDERS = [
+        'account_id',
+        'added_on',
+        'created_at',
+        'currency',
+        'entity_id',
+        'hot',
+        'id',
+        'last_activity',  # Alias for (otherwise not available) updated_at
+        'last_stage_change_at',
+        'loss_reason_id',
+        'name',
+        'scope',
+        'source_id',
+        'stage_code',
+        'user_id'
+        # In sort_value if submitted, otherwise not returned:
+        'source',
+        # Pulls full source record (user_id, name, created_at, updated_at, created_via, deleted_at, id, account_id
+    ]
 
+    def params(self):
+        params = deepcopy(self.filters)
+        if 'city' in params:
+            params['city'] = str(params['city']).lower()
+        if 'region' in params:
+            params['region'] = str(params['region']).lower()
+        if 'country' in params:
+            params['country'] = str(params['country']).lower()
+
+
+class LegacyService(object):
     ##########################
     # Resource Builders
     #
@@ -228,15 +255,21 @@ class BaseAPIService(object):
     # response, URL builder functions (returning just a url string) are being replaced with "resource" functions
     # returning a tuple of URL string (excluding parameters) and parameter dict.
     ##########################
-    def _build_resource_url(self, resource, version, path='', format=None):
+    def _build_resource_url(self, resource, version, path=''):
         """
         Builds a URL for a resource using the not-officially-documented format:
             https://app.futuresimple.com/apis/<resource>/api/v<version>/<path>.<format>
         """
-        url = 'https://app.futuresimple.com/apis/%s/api/v%d%s' % (resource, version, path)
-        return self._apply_format(url, format)
+        if version == 2:
+            if self.debug:
+                url = 'https://api.sandbox.getbase.com/v%d%s' % (version, path)
+            else:
+                url = 'https://api.getbase.com/v%d%s' % (version, path)
+        else:
+            url = 'https://app.futuresimple.com/apis/%s/api/v%d%s' % (resource, version, path)
+        return self._apply_format(url, self.format)
 
-    def _build_search_url(self, type, format):
+    def _build_search_url(self, type):
         if type == 'contact':
             url, params = self._build_contact_resource()
         elif type == 'deal':
@@ -246,35 +279,14 @@ class BaseAPIService(object):
         else:
             raise ValueError("Invalid search type.")
         url += '/search'
-        return self._apply_format(url, format)
-
-    ##########################
-    # Accounts Functions
-    ##########################
-    def get_accounts(self):
-        """
-        Get current account.
-
-        RESPONSE STRUCTURE
-
-        {'account':
-            {'currency_id': ...
-             'currency_name': ...
-             'id': ...
-             'name': ...
-             'timezone': ...
-             }
-        }
-        """
-        url_noparam = self._build_resource_url('sales', 1, '/account', self.format)
-        return self._get_data(url_noparam, {})
+        return self._apply_format(url, self.format)
 
     ##########################
     # Feed (i.e. Activity) Functions
     #
     # NOTE: feeds overlap to some degree with tasks (completed only) and notes
     ##########################
-    def _build_feed_resource(self, contact_id=None, lead_id=None, deal_id=None, type=None, timestamp=None, format=None):
+    def _build_feed_resource(self, contact_id=None, lead_id=None, deal_id=None, type=None, timestamp=None):
         """
         Returns a tuple of URL (without parameters) and params that will produce a list of activities (i.e. feed) in
         batches of 20.
@@ -294,8 +306,6 @@ class BaseAPIService(object):
         Paging:
             timestamp - feed paging is achieved using the timestamp parameter, not a traditional page number (see the
                 stateful client for automatic handling of feed paging
-        Format:
-            format (default None) - see BaseAPIService._apply_format() for accepted values
 
         RESPONSE STRUCTURE
 
@@ -350,10 +360,10 @@ class BaseAPIService(object):
                 raise ValueError(
                     "'%s' is not a valid type, must be None, 'Email', 'Note', 'Call', or 'Task'" % str(type))
 
-        url_noparam = self._build_resource_url('feeder', 1, path, format)
+        url_noparam = self._build_resource_url('feeder', 1, path, self.format)
         return url_noparam, url_params
 
-    def _get_feed(self, contact_id=None, lead_id=None, deal_id=None, type=None, timestamp=None, format=None):
+    def _get_feed(self, contact_id=None, lead_id=None, deal_id=None, type=None, timestamp=None):
         """
         Returns the most recent 20 activities (i.e. feed) that meet the filter conditions
 
@@ -380,7 +390,7 @@ class BaseAPIService(object):
         see get_feed()
         """
         url_noparam, url_params = self._build_feed_resource(contact_id=contact_id, deal_id=deal_id, lead_id=lead_id,
-                                                            type=type, timestamp=timestamp, format=format)
+                                                            type=type, timestamp=timestamp)
         return self._get_data(url_noparam, url_params)
 
     def get_feed(self, type=None, timestamp=None):
@@ -442,60 +452,60 @@ class BaseAPIService(object):
         'id', 'cc', 'subject']
 
         """
-        return self._get_feed(type=type, timestamp=timestamp, format=self.format)
+        return self._get_feed(type=type, timestamp=timestamp)
 
     def get_contact_feed(self, contact_id, timestamp=None):
-        return self._get_feed(contact_id=contact_id, timestamp=timestamp, format=self.format)
+        return self._get_feed(contact_id=contact_id, timestamp=timestamp)
 
     def get_contact_feed_emails(self, contact_id, timestamp=None):
-        return self._get_feed(contact_id=contact_id, type='Email', timestamp=timestamp, format=self.format)
+        return self._get_feed(contact_id=contact_id, type='Email', timestamp=timestamp)
 
     def get_contact_feed_notes(self, contact_id, timestamp=None):
-        return self._get_feed(contact_id=contact_id, type='Note', timestamp=timestamp, format=self.format)
+        return self._get_feed(contact_id=contact_id, type='Note', timestamp=timestamp)
 
     def get_contact_feed_calls(self, contact_id, timestamp=None):
-        return self._get_feed(contact_id=contact_id, type='Call', timestamp=timestamp, format=self.format)
+        return self._get_feed(contact_id=contact_id, type='Call', timestamp=timestamp)
 
     def get_contact_feed_tasks_completed(self, contact_id, timestamp=None):
-        return self._get_feed(contact_id=contact_id, type='Task', timestamp=timestamp, format=self.format)
+        return self._get_feed(contact_id=contact_id, type='Task', timestamp=timestamp)
 
     def get_deal_feed(self, deal_id, timestamp=None):
-        return self._get_feed(deal_id=deal_id, timestamp=timestamp, format=self.format)
+        return self._get_feed(deal_id=deal_id, timestamp=timestamp)
 
     def get_deal_feed_emails(self, deal_id, timestamp=None):
-        return self._get_feed(deal_id=deal_id, type='Email', timestamp=timestamp, format=self.format)
+        return self._get_feed(deal_id=deal_id, type='Email', timestamp=timestamp)
 
     def get_deal_feed_notes(self, deal_id, timestamp=None):
-        return self._get_feed(deal_id=deal_id, type='Note', timestamp=timestamp, format=self.format)
+        return self._get_feed(deal_id=deal_id, type='Note', timestamp=timestamp)
 
     def get_deal_feed_calls(self, deal_id, timestamp=None):
-        return self._get_feed(deal_id=deal_id, type='Call', timestamp=timestamp, format=self.format)
+        return self._get_feed(deal_id=deal_id, type='Call', timestamp=timestamp)
 
     def get_deal_feed_tasks_completed(self, deal_id, timestamp=None):
-        return self._get_feed(deal_id=deal_id, type='Task', timestamp=timestamp, format=self.format)
+        return self._get_feed(deal_id=deal_id, type='Task', timestamp=timestamp)
 
     def get_lead_feed(self, lead_id, timestamp=None):
-        return self._get_feed(lead_id=lead_id, timestamp=timestamp, format=self.format)
+        return self._get_feed(lead_id=lead_id, timestamp=timestamp)
 
     def get_lead_feed_emails(self, lead_id, timestamp=None):
-        return self._get_feed(lead_id=lead_id, type='Email', timestamp=timestamp, format=self.format)
+        return self._get_feed(lead_id=lead_id, type='Email', timestamp=timestamp)
 
     def get_lead_feed_notes(self, lead_id, timestamp=None):
-        return self._get_feed(lead_id=lead_id, type='Note', timestamp=timestamp, format=self.format)
+        return self._get_feed(lead_id=lead_id, type='Note', timestamp=timestamp)
 
     def get_lead_feed_notes_alt(self, lead_id, timestamp=None):
-        return self._get_notes(lead_id=lead_id, timestamp=timestamp, format=self.format)
+        return self._get_notes(lead_id=lead_id, timestamp=timestamp)
 
     def get_lead_feed_calls(self, lead_id, timestamp=None):
-        return self._get_feed(lead_id=lead_id, type='Call', timestamp=timestamp, format=self.format)
+        return self._get_feed(lead_id=lead_id, type='Call', timestamp=timestamp)
 
     def get_lead_feed_tasks_completed(self, lead_id, timestamp=None):
-        return self._get_feed(lead_id=lead_id, type='Task', timestamp=timestamp, format=self.format)
+        return self._get_feed(lead_id=lead_id, type='Task', timestamp=timestamp)
 
     ##########################
     # Tags Functions
     ##########################
-    def _build_tags_resource(self, tag_id=None, app_id=None, page=None, format=None):
+    def _build_tags_resource(self, tag_id=None, app_id=None, page=None):
         """
         Returns a tuple of URL (without parameters) and params to obtain a list of tags in batches of 20
 
@@ -531,7 +541,7 @@ class BaseAPIService(object):
         if page is not None:
             url_params['page'] = page
 
-        url_noparam = self._build_resource_url('tags', 1, path, format)
+        url_noparam = self._build_resource_url('tags', 1, path)
         return url_noparam, url_params
 
     def get_tags(self, type, page=1):
@@ -574,7 +584,7 @@ class BaseAPIService(object):
         else:
             raise ValueError("type was '%s' but must be 'Contact', 'ContactAlt', 'Deal', or 'Lead'" % str(type))
 
-        url_noparam, url_params = self._build_tags_resource(app_id=app_id, page=page, format=self.format)
+        url_noparam, url_params = self._build_tags_resource(app_id=app_id, page=page)
         return self._get_data(url_noparam, url_params)
 
     def get_tag(self, tag_id):
@@ -590,7 +600,7 @@ class BaseAPIService(object):
             }
         }
         """
-        url_noparam, url_params = self._build_tags_resource(tag_id=tag_id, format=self.format)
+        url_noparam, url_params = self._build_tags_resource(tag_id=tag_id)
         return self._get_data(url_noparam, url_params)
 
     def get_contact_tags(self, page=1):
@@ -640,8 +650,7 @@ class BaseAPIService(object):
         raise NotImplementedError
 
     def _build_taggings_resource(self, tag_list, method='add', contact_id=None, deal_id=None, lead_id=None,
-                                 contact_ids=None, deal_ids=None, lead_ids=None,
-                                 format=None):
+                                 contact_ids=None, deal_ids=None, lead_ids=None):
         """
         Returns a tuple of URL (without parameters) and params to modify object tags
 
@@ -716,7 +725,7 @@ class BaseAPIService(object):
         elif url_params['taggable_type'] == 'Lead':
             url_params['app_id'] = 5
 
-        url_noparam = self._build_resource_url('tags', 1, path, format)
+        url_noparam = self._build_resource_url('tags', 1, path)
         return url_noparam, url_params
 
     def _add_tags(self, tag_list, contact_id=None, deal_id=None, lead_id=None,
@@ -775,8 +784,7 @@ class BaseAPIService(object):
             raise ValueError('_add_tags request must include a valid object')
 
         url_noparam, url_params = self._build_taggings_resource(tag_list=tag_list, method=method,
-                                                                contact_ids=contacts, deal_ids=deals, lead_ids=leads,
-                                                                format=self.format)
+                                                                contact_ids=contacts, deal_ids=deals, lead_ids=leads)
         return self._post_data(url_noparam, url_params)
 
     def _remove_tag(self, tag, contact_id=None, deal_id=None, lead_id=None,
@@ -830,8 +838,7 @@ class BaseAPIService(object):
         url_noparam, url_params = self._build_taggings_resource(tag_list=tag, method=method, contact_id=contact_id,
                                                                 deal_id=deal_id, lead_id=lead_id,
                                                                 contact_ids=contact_ids, deal_ids=deal_ids,
-                                                                lead_ids=lead_ids,
-                                                                format=self.format)
+                                                                lead_ids=lead_ids)
         return self._post_data(url_noparam, url_params)
 
     def _replace_tags(self, tag_list, contact_id=None, deal_id=None, lead_id=None):
@@ -868,7 +875,7 @@ class BaseAPIService(object):
             tag_list = [str(x).lower() for x in tag_list if x]
 
         url_noparam, url_params = self._build_taggings_resource(tag_list=tag_list, method=method, contact_id=contact_id,
-                                                                deal_id=deal_id, lead_id=lead_id, format=self.format)
+                                                                deal_id=deal_id, lead_id=lead_id)
         return self._post_data(url_noparam, url_params)
 
     def tag_contacts(self, tag_list, contact_ids):
@@ -1041,7 +1048,7 @@ class BaseAPIService(object):
     #
     # NOTE: notes overlap to some degree with feeds
     ##########################
-    def _build_note_resource(self, note_id=None, contact_id=None, deal_id=None, lead_id=None, page=None, format=None):
+    def _build_note_resource(self, note_id=None, contact_id=None, deal_id=None, lead_id=None, page=None):
         """
         Returns a tuple of URL (without parameters) and params to get notes matching filter criteria in batches of 20
 
@@ -1079,7 +1086,7 @@ class BaseAPIService(object):
         url_noparam = self._build_resource_url('common', 1, path, format)
         return url_noparam, url_params
 
-    def _get_notes(self, note_id=None, contact_id=None, deal_id=None, lead_id=None, page=None, format=None):
+    def _get_notes(self, note_id=None, contact_id=None, deal_id=None, lead_id=None, page=None):
         """
         PRIVATE FUNCTION to get notes that can be called by public, single-purpose notes functions.
 
@@ -1088,7 +1095,7 @@ class BaseAPIService(object):
         see get_notes(), get_note()
         """
         url_noparam, url_params = self._build_note_resource(note_id=note_id, contact_id=contact_id, deal_id=deal_id,
-                                                            lead_id=lead_id, page=page, format=format)
+                                                            lead_id=lead_id, page=page)
         return self._get_data(url_noparam, url_params)
 
     def get_notes(self, page=1):
@@ -1117,7 +1124,7 @@ class BaseAPIService(object):
             }
         }, ...]
         """
-        return self._get_notes(page=page, format=self.format)
+        return self._get_notes(page=page)
 
     def get_note(self, note_id):
         """
@@ -1139,9 +1146,9 @@ class BaseAPIService(object):
             }
         }
         """
-        return self._get_notes(note_id=note_id, format=self.format)
+        return self._get_notes(note_id=note_id)
 
-    def _upsert_note(self, content, note_id=None, contact_id=None, deal_id=None, lead_id=None, format=None):
+    def _upsert_note(self, content, note_id=None, contact_id=None, deal_id=None, lead_id=None):
         """
         PRIVATE FUNCTION to create or update notes
 
@@ -1165,7 +1172,7 @@ class BaseAPIService(object):
         python dicts.
         """
         url_noparams, note_params = self._build_note_resource(note_id=note_id, contact_id=contact_id, deal_id=deal_id,
-                                                              lead_id=lead_id, format=format)
+                                                              lead_id=lead_id)
 
         note_params['content'] = content
         url_params = _key_coded_dict({'note': note_params})
@@ -1198,7 +1205,7 @@ class BaseAPIService(object):
 
         see get_note()
         """
-        return self._get_notes(contact_id=contact_id, page=page, format=self.format)
+        return self._get_notes(contact_id=contact_id, page=page)
 
     def create_contact_note(self, content, contact_id):
         """
@@ -1223,7 +1230,7 @@ class BaseAPIService(object):
         return self._upsert_note(content=content, note_id=note_id)
 
     def get_deal_notes(self, deal_id, page=0):
-        return self._get_notes(deal_id=deal_id, page=page, format=self.format)
+        return self._get_notes(deal_id=deal_id, page=page)
 
     def create_deal_note(self, content, deal_id):
         """
@@ -1242,7 +1249,7 @@ class BaseAPIService(object):
         return self._upsert_note(content=content, note_id=note_id)
 
     def get_lead_notes(self, lead_id, page=0):
-        return self._get_notes(lead_id=lead_id, page=page, format=self.format)
+        return self._get_notes(lead_id=lead_id, page=page)
 
     def create_lead_note(self, content, lead_id):
         """
@@ -1276,7 +1283,7 @@ class BaseAPIService(object):
     # https://app.futuresimple.com/apis/common/api/v1/tasks/context_count.json?page=1&status=done&_=1394056005668
 
     def _build_task_resource(self, task_id=None, contact_id=None, lead_id=None, deal_id=None, status=None, due=None,
-                             due_range=None, page=1, format=None):
+                             due_range=None, page=1):
         """
         Returns a tuple of URL (without parameters) and params to get tasks in batches of 20.
 
@@ -1358,11 +1365,11 @@ class BaseAPIService(object):
 
         url_params['page'] = page
 
-        url_noparam = self._build_resource_url('common', 1, path, format)
+        url_noparam = self._build_resource_url('common', 1, path)
         return url_noparam, url_params
 
     def _get_tasks(self, task_id=None, contact_id=None, lead_id=None, deal_id=None, status=None, due=None,
-                   due_range=None, page=1, format=None):
+                   due_range=None, page=1):
         """
         PRIVATE FUNCTION to get tasks that can be called by public, single-purpose tasks functions.
 
@@ -1372,7 +1379,7 @@ class BaseAPIService(object):
         """
         url_noparam, url_params = self._build_task_resource(task_id=task_id, contact_id=contact_id, lead_id=lead_id,
                                                             deal_id=deal_id, status=status, due=due,
-                                                            due_range=due_range, page=page, format=format)
+                                                            due_range=due_range, page=page)
         return self._get_data(url_noparam, url_params)
 
     def get_tasks(self, status=None, due=None, page=1):
@@ -1407,7 +1414,7 @@ class BaseAPIService(object):
         }, ...]
 
         """
-        return self._get_tasks(status=status, due=due, page=page, format=self.format)
+        return self._get_tasks(status=status, due=due, page=page)
 
     def get_tasks_by_date_range(self, due_from, due_to, status=None, page=1):
         """
@@ -1429,7 +1436,7 @@ class BaseAPIService(object):
 
         see get_tasks()
         """
-        return self._get_tasks(status=status, due_range=(due_from, due_to), page=page, format=self.format)
+        return self._get_tasks(status=status, due_range=(due_from, due_to), page=page)
 
     def get_task(self, task_id):
         """
@@ -1459,19 +1466,19 @@ class BaseAPIService(object):
             }
         }
         """
-        return self._get_tasks(task_id=task_id, format=self.format)
+        return self._get_tasks(task_id=task_id)
 
     # Relocate
     def get_contact_tasks(self, contact_id):
-        return self._get_tasks(contact_id=contact_id, format=self.format)
+        return self._get_tasks(contact_id=contact_id)
 
     def get_deal_tasks(self, deal_id):
-        return self._get_tasks(deal_id=deal_id, format=self.format)
+        return self._get_tasks(deal_id=deal_id)
 
     def get_lead_tasks(self, lead_id):
-        return self._get_tasks(lead_id=lead_id, format=self.format)
+        return self._get_tasks(lead_id=lead_id)
 
-    def _upsert_task(self, task_info, task_id=None, contact_id=None, lead_id=None, deal_id=None, format=None):
+    def _upsert_task(self, task_info, task_id=None, contact_id=None, lead_id=None, deal_id=None):
         """
         PRIVATE FUNCTION to create or update a task
 
@@ -1491,7 +1498,7 @@ class BaseAPIService(object):
         see get_task()
         """
         url_noparam, url_params = self._build_task_resource(task_id=task_id, contact_id=contact_id,
-                                                            lead_id=lead_id, deal_id=deal_id, format=self.format)
+                                                            lead_id=lead_id, deal_id=deal_id)
         if contact_id is not None:
             task_info['taskable_type'] = 'Contact'
             task_info['taskable_id'] = contact_id
@@ -1579,10 +1586,10 @@ class BaseAPIService(object):
         return self._get_data(url_noparam, url_params)
 
     def get_contact_reminders(self, contact_id):
-        return self._get_reminder(contact_id=contact_id, format=self.format)
+        return self._get_reminder(contact_id=contact_id)
 
     def get_deal_reminders(self, deal_id):
-        return self._get_reminder(deal_id=deal_id, format=self.format)
+        return self._get_reminder(deal_id=deal_id)
 
     # API does not appear to support reminders for leads
 
@@ -1600,7 +1607,7 @@ class BaseAPIService(object):
         Format:
             format (default None) - see BaseAPIService._apply_format() for accepted values
         """
-        url_noparam, url_params = self._build_reminder_resource(reminder_id=reminder_id, contact_id=contact_id, deal_id=deal_id, format=self.format)
+        url_noparam, url_params = self._build_reminder_resource(reminder_id=reminder_id, contact_id=contact_id, deal_id=deal_id)
         url_params = _key_coded_dict({'reminder': reminder_info})
         if reminder_id is None:
             return self._post_data(url_noparam, url_params)
@@ -1639,61 +1646,6 @@ class BaseAPIService(object):
     #
     # https://app.futuresimple.com/apis/common/api/v1/feed/account_contacts_privacy.json
     ##########################
-    CONTACT_PARAMS = [
-        'name',
-        'last_name',
-        'first_name',
-        'is_organisation',
-        'contact_id',
-        'email',
-        'phone',
-        'mobile',
-        'twitter',
-        'skype',
-        'facebook',
-        'linkedin',
-        'address',
-        'city',
-        'country',
-        'title',
-        'description',
-        'industry',
-        'website',
-        'fax',
-        'tag_list',
-        'private',
-    ]
-
-    CONTACT_FILTERS = [
-        'user_id',
-        'city',  # All lower
-        'region',  # All lower
-        'zip',  # NOT zip_code as listed in aggregate
-        'country',  # All lower
-        'tag_ids',  # Comma (%2C) separated in URL
-        'tags',  # All lower; Comma (%2C) separated in URL
-    ]
-
-    CONTACT_SORTS = [
-        # Verified not available: organisation_name, mobile, overdue_tasks, phone, unread_emails
-        # Included in return list:
-        'last_name',
-        'first_name',
-        'user_id',
-        'account_id',
-        'title',
-        'created_at',
-        'is_sales_account',
-        'id',
-        'is_organisation',
-        'email',
-        'name',
-        # In sort_value if submitted, otherwise not returned:
-        'last_activity',
-        'calls_to_action,first',
-        'calls_to_action,last'
-    ]
-
     def _build_contact_resource(self, contact_id=None, contact_ids=None, company_id=None, deal_id=None,
                                 page=1, per_page=None, format=None):
         """
@@ -1800,13 +1752,11 @@ class BaseAPIService(object):
             }
         }, ...]
         """
-        url_noparam, url_params = self._build_contact_resource(contact_ids=contact_ids, page=page, per_page=per_page,
-                                                               format=self.format)
+        url_noparam, url_params = self._build_contact_resource(contact_ids=contact_ids, page=page, per_page=per_page)
         return self._get_data(url_noparam, url_params)
 
     def get_deal_contacts(self, deal_id, page=1, per_page=None):
-        url_noparam, url_params = self._build_contact_resource(deal_id=deal_id, page=page, per_page=per_page,
-                                                               format=self.format)
+        url_noparam, url_params = self._build_contact_resource(deal_id=deal_id, page=page, per_page=per_page)
         return self._get_data(url_noparam, url_params)
 
     def get_contact(self, contact_id):
@@ -1865,7 +1815,7 @@ class BaseAPIService(object):
          'metadata': ...
         }
         """
-        url_noparam = self._build_search_url('contact', self.format)
+        url_noparam = self._build_search_url('contact')
 
         valid_params = {'page': page}
         if filters is not None:
@@ -1908,7 +1858,7 @@ class BaseAPIService(object):
 
         see get_contact()
         """
-        url_noparam, url_params = self._build_contact_resource(contact_id=contact_id, format=self.format)
+        url_noparam, url_params = self._build_contact_resource(contact_id=contact_id)
 
         # If we are creating a new contact, we must have name and last_name parameters
         # and we always must have some parameter
@@ -2008,7 +1958,7 @@ class BaseAPIService(object):
         ...}
         """
         path = '/custom_fields'
-        url_noparam = self._build_resource_url('crm', 1, path, self.format)
+        url_noparam = self._build_resource_url('crm', 1, path)
         url_params = {
             'filterable': str(filterable).lower(),
         }
@@ -2033,60 +1983,6 @@ class BaseAPIService(object):
     #
     # https://app.futuresimple.com/apis/uploader/api/v2/attachments.json?attachable_type=DocumentRepository&attachable_id=null
     ##########################
-    DEAL_PARAMS = [
-        'name',
-        'entity_id',
-        'scope',
-        'hot',
-        'deal_tags',
-        'contact_ids',
-        'source_id',
-        'stage',
-    ]
-
-    DEAL_STAGES = [
-        'incoming',
-        'qualified',
-        'quote',
-        'custom1',
-        'custom2',
-        'custom3',
-        'closure',
-        'won',
-        'lost',
-        'unqualified',
-    ]
-
-    DEAL_FILTERS = [
-        'currency',
-        'stage',
-        'tag_ids',
-        # tags (e.g. tag text) not available in deals
-        'user_id',
-        'hot',
-    ]
-
-    DEAL_SORTS = [
-        'account_id',
-        'added_on',
-        'created_at',
-        'currency',
-        'entity_id',
-        'hot',
-        'id',
-        'last_activity',  # Alias for (otherwise not available) updated_at
-        'last_stage_change_at',
-        'loss_reason_id',
-        'name',
-        'scope',
-        'source_id',
-        'stage_code',
-        'user_id'
-        # In sort_value if submitted, otherwise not returned:
-        'source',
-        # Pulls full source record (user_id, name, created_at, updated_at, created_via, deleted_at, id, account_id
-    ]
-
     def _build_deal_resource(self, deal_id=None, deal_ids=None, contact_ids=None, stage=None, page=1, per_page=None,
                              format=None):
         """
@@ -2156,14 +2052,14 @@ class BaseAPIService(object):
         see search_deals()
 
         """
-        url_noparam, url_params = self._build_deal_resource(deal_ids=deal_ids, stage=stage, page=page, format=self.format)
+        url_noparam, url_params = self._build_deal_resource(deal_ids=deal_ids, stage=stage, page=page)
         return self._get_data(url_noparam, url_params)
 
     def get_deal(self, deal_id):
         """
         Gets the deal with the given deal_id. Returns the deal info.
         """
-        url_noparam, url_params = self._build_deal_resource(deal_ids=[deal_id], format=self.format)
+        url_noparam, url_params = self._build_deal_resource(deal_ids=[deal_id])
         return self._get_data(url_noparam, url_params)
 
     def search_deals(self, filters=None, sort_by=None, sort_order='asc', tags_exclusivity='and', page=1):
@@ -2207,7 +2103,7 @@ class BaseAPIService(object):
         'metadata': ...
         }
         """
-        url_noparam = self._build_search_url('deal', self.format)
+        url_noparam = self._build_search_url('deal')
 
         valid_params = dict()
         valid_params['page'] = page
@@ -2267,7 +2163,7 @@ class BaseAPIService(object):
 
         see get_deal()
         """
-        url_noparam, url_params = self._build_deal_resource(deal_id=deal_id, format=self.format)
+        url_noparam, url_params = self._build_deal_resource(deal_id=deal_id)
 
         # If we are creating a new deal, we must have name and entity_id parameters
         # and we always must have some parameter
@@ -2351,7 +2247,7 @@ class BaseAPIService(object):
         ...}
         """
         path = '/deal_custom_fields'
-        url_noparam = self._build_resource_url('sales', 1, path, self.format)
+        url_noparam = self._build_resource_url('sales', 1, path)
         url_params = {
             'filterable': str(filterable).lower(),
         }
@@ -2427,7 +2323,7 @@ class BaseAPIService(object):
             }
         }, ...]
         """
-        url_noparam, url_params = self._build_sources_resource(type=type, format=self.format)
+        url_noparam, url_params = self._build_sources_resource(type=type)
         return self._get_data(url_noparam, url_params)
 
     def get_source(self, source_id):
@@ -2450,7 +2346,7 @@ class BaseAPIService(object):
             }
         }
         """
-        url_noparam, url_params = self._build_sources_resource(source_id=source_id, format=self.format)
+        url_noparam, url_params = self._build_sources_resource(source_id=source_id)
         return self._get_data(url_noparam, url_params)
 
     ##########################
@@ -2464,57 +2360,6 @@ class BaseAPIService(object):
     # https://app.futuresimple.com/apis/leads/api/v1/custom_fields.json?sortable=true
     # https://app.futuresimple.com/apis/leads/api/v1/custom_fields/filterable.json
     ##########################
-    LEAD_FILTERS = [
-        'tag_ids',
-        'owner_id',
-        'status_id',
-    ]
-
-    LEAD_SORTS = [
-        'account_id',
-        'added_on',
-        'company_name',
-        'created_at',
-        'first_name',
-        'id',
-        'last_activity_date',
-        'last_activity',  # Appears to be alias of last_activity_date
-        'last_name',
-        'owner_id',
-        'state',
-        'status_id',
-        'title',
-        #'tag_ids', # Accepted by API but non-functional
-        #'tags', # Accepted by API but non-functional
-        'user_id',
-    ]
-
-    LEAD_PARAMS = [
-        'lead_id',
-        'last_name',
-        'company_name',
-        'first_name',
-        'email',
-        'phone',
-        'mobile',
-        'twitter',
-        'skype',
-        'facebook',
-        'linkedin',
-        'street',
-        'city',
-        'region',
-        'zip',
-        'country',
-        'title',
-        'description',
-        # Valid for contacts, check for leads
-        #        'industry',
-        #        'website',
-        #        'fax',
-        #        'tag_list',
-        #        'private',
-    ]
 
     def _build_lead_resource(self, lead_id=None, page=None, per_page=None, format=None):
         """
@@ -2583,7 +2428,7 @@ class BaseAPIService(object):
          'metadata': ...
         }
         """
-        url_noparam, url_params = self._build_lead_resource(page=page, per_page=per_page, format=self.format)
+        url_noparam, url_params = self._build_lead_resource(page=page, per_page=per_page)
         return self._get_data(url_noparam, url_params)
 
     def get_lead(self, lead_id):
@@ -2616,7 +2461,7 @@ class BaseAPIService(object):
           'metatdata': ...
         }
         """
-        url_noparam, url_params = self._build_lead_resource(lead_id=lead_id, format=self.format)
+        url_noparam, url_params = self._build_lead_resource(lead_id=lead_id)
         return self._get_data(url_noparam, url_params)
 
     def search_leads(self, filters=None, sort_by=None, sort_order='asc', tags_exclusivity='and', page=0, per_page=20):
@@ -2659,7 +2504,7 @@ class BaseAPIService(object):
 
         https://app.futuresimple.com/apis/leads/api/v1/leads/search.json?sort_by=last_name&sort_order=asc&tags_exclusivity=and&without_unqualified=true
         """
-        url_noparam = self._build_search_url('lead', self.format)
+        url_noparam = self._build_search_url('lead')
         valid_params = dict()
 
         valid_params['page'] = page
@@ -2706,7 +2551,7 @@ class BaseAPIService(object):
 
         see get_lead()
         """
-        url_noparam, url_params = self._build_lead_resource(lead_id=lead_id, format=self.format)
+        url_noparam, url_params = self._build_lead_resource(lead_id=lead_id)
 
         # If we are creating a new lead, we must have name and entity_id parameters
         # and we always must have some parameter
@@ -2731,112 +2576,54 @@ class BaseAPIService(object):
         else:
             return self._put_data(url_noparam, url_params)
 
-    def create_lead(self, lead_info):
-        """
-        Creates a new lead based on lead_info
+    ##########################
+    # Email Functions
+    #
+    # NOT YET IMPLEMENTED
+    #
+    # V1
+    # https://app.futuresimple.com/apis/mailman/api/v1/email_profile.json
+    # https://app.futuresimple.com/apis/mailman/api/v1/email_profiles/check.json
+    #
+    # V2
+    # https://app.futuresimple.com/apis/mailman/api/v2/email_profile.json
+    # https://app.futuresimple.com/apis/mailman/api/v2/email_profile.json?postpone=true
+    #
+    # Inbox
+    # https://app.futuresimple.com/apis/mailman/api/v2/synced_emails.json?mailbox=inbox&page=1&fields=items%2Ctotal_count&content=none
+    #
+    # Sent
+    # https://app.futuresimple.com/apis/mailman/api/v2/synced_emails.json?mailbox=outbox&page=1&fields=items%2Ctotal_count&content=none
+    #
+    # Archived
+    # https://app.futuresimple.com/apis/mailman/api/v2/synced_emails.json?mailbox=archived&page=1&fields=items%2Ctotal_count&content=none
+    #
+    # Untracked
+    # https://app.futuresimple.com/apis/mailman/api/v1/synced_emails/other.json?page=1
+    ##########################
 
-        ARGUMENTS
+    ##########################
+    # Call Functions
+    #
+    # NOT YET IMPLEMENTED
+    #
+    # https://app.futuresimple.com/apis/voice/api/v1/voice_preferences.json
+    # https://app.futuresimple.com/apis/voice/api/v1/call_lists.json
+    # https://app.futuresimple.com/apis/voice/api/v1/call_outcomes.json
+    # https://app.futuresimple.com/apis/voice/api/v1/call_scripts.json
+    ##########################
 
-            lead_info - dict of fields (see CONTACT_PARAMS for valid field names)
-
-        RESPONSE STRUCTURE
-
-        see get_lead()
-        """
-        return self._upsert_lead(lead_info=lead_info)
-
-    def update_lead(self, lead_info, lead_id):
-        """
-        Edits lead with the unique base_id based on lead_info with fields shown in CONTACT_PARAMS.
-
-        ARGUMENTS
-
-            lead_info - dict of fields (see CONTACT_PARAMS for valid field names)
-            lead_id - lead being updated
-
-        RESPONSE STRUCTURE
-
-        see get_lead()
-        """
-        return self._upsert_lead(lead_info=lead_info, lead_id=lead_id)
-
-    def get_lead_custom_fields(self):
-        """
-        Returns lead custom field definitions
-
-        RESPONSE STRUCTURE
-
-        Note: for dropdown fields, list_options is a dict mapping option IDs
-        to their values
-
-        {'field name':
-            {'date_time': ...
-             'field_type': ...
-             'filterable': ...
-             'id': ...
-             'list_options': ...
-             'name': ...
-             'position': ...
-             'settings': ...
-             'value_editable_only_by_admin': ...
-             'writable': ...
-            },
-        ...}
-        """
-        path = '/custom_fields'
-        url_noparam = self._build_resource_url('leads', 1, path, self.format)
-        url_params = {}
-        response = self._get_data(url_noparam, url_params)
-        return self._unwrap_custom_fields(response['items'])
-
-        ##########################
-        # Email Functions
-        #
-        # NOT YET IMPLEMENTED
-        #
-        # V1
-        # https://app.futuresimple.com/apis/mailman/api/v1/email_profile.json
-        # https://app.futuresimple.com/apis/mailman/api/v1/email_profiles/check.json
-        #
-        # V2
-        # https://app.futuresimple.com/apis/mailman/api/v2/email_profile.json
-        # https://app.futuresimple.com/apis/mailman/api/v2/email_profile.json?postpone=true
-        #
-        # Inbox
-        # https://app.futuresimple.com/apis/mailman/api/v2/synced_emails.json?mailbox=inbox&page=1&fields=items%2Ctotal_count&content=none
-        #
-        # Sent
-        # https://app.futuresimple.com/apis/mailman/api/v2/synced_emails.json?mailbox=outbox&page=1&fields=items%2Ctotal_count&content=none
-        #
-        # Archived
-        # https://app.futuresimple.com/apis/mailman/api/v2/synced_emails.json?mailbox=archived&page=1&fields=items%2Ctotal_count&content=none
-        #
-        # Untracked
-        # https://app.futuresimple.com/apis/mailman/api/v1/synced_emails/other.json?page=1
-        ##########################
-
-        ##########################
-        # Call Functions
-        #
-        # NOT YET IMPLEMENTED
-        #
-        # https://app.futuresimple.com/apis/voice/api/v1/voice_preferences.json
-        # https://app.futuresimple.com/apis/voice/api/v1/call_lists.json
-        # https://app.futuresimple.com/apis/voice/api/v1/call_outcomes.json
-        # https://app.futuresimple.com/apis/voice/api/v1/call_scripts.json
-        ##########################
-
-        ##########################
-        # Miscellaneous Functions
-        #
-        # NOT YET IMPLEMENTED
-        #
-        # https://app.futuresimple.com/apis/core/api/v2/startup.json
-        # https://app.futuresimple.com/apis/sales/api/v1/dashboard.json
-        # https://app.futuresimple.com/apis/core/api/v1/public/currencies.json
-        # https://app.futuresimple.com/apis/feeder/api/v1/feed.json?&timestamp=null
-        # https://app.futuresimple.com/apis/voice/api/v1/voice_preferences.json
-        # https://app.futuresimple.com/apis/sales/api/v1/integrations_status.json
-        # https://app.futuresimple.com/apis/crm/api/v1/mailchimp/status.json
-        # https://app.futuresimple.com/apis/uploader/api/v2/attachments.json?attachable_type=Deal&attachable_id=2255196
-        ##########################
+    ##########################
+    # Miscellaneous Functions
+    #
+    # NOT YET IMPLEMENTED
+    #
+    # https://app.futuresimple.com/apis/core/api/v2/startup.json
+    # https://app.futuresimple.com/apis/sales/api/v1/dashboard.json
+    # https://app.futuresimple.com/apis/core/api/v1/public/currencies.json
+    # https://app.futuresimple.com/apis/feeder/api/v1/feed.json?&timestamp=null
+    # https://app.futuresimple.com/apis/voice/api/v1/voice_preferences.json
+    # https://app.futuresimple.com/apis/sales/api/v1/integrations_status.json
+    # https://app.futuresimple.com/apis/crm/api/v1/mailchimp/status.json
+    # https://app.futuresimple.com/apis/uploader/api/v2/attachments.json?attachable_type=Deal&attachable_id=2255196
+    ##########################
