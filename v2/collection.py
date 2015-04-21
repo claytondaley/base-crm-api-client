@@ -23,15 +23,15 @@ class AddressFilter(Collection):
         'country': basestring,
     }
 
-    def params(self):
-        params = super(AddressFilter, self).params()
-        if 'city' in params:
-            params['city'] = str(params['city']).lower()
-        if 'region' in params:
-            params['region'] = str(params['region']).lower()
-        if 'country' in params:
-            params['country'] = str(params['country']).lower()
-        return params
+    def format_data_set(self):
+        data = super(AddressFilter, self).format_data_set()
+        if 'city' in data:
+            data['city'] = str(data['city']).lower()
+        if 'region' in data:
+            data['region'] = str(data['region']).lower()
+        if 'country' in data:
+            data['country'] = str(data['country']).lower()
+        return data
 
 
 class ContactSet(Collection):
@@ -75,10 +75,10 @@ class PersonSet(ContactSet):
     FILTERS = {k: ContactSet.FILTERS[k] for k in ContactSet.FILTERS if k != 'is_organization'}
     _ITEM = Person
 
-    def params(self):
-        params = super(PersonSet, self).params()
-        params['is_organization'] = False
-        return params
+    def format_data_set(self):
+        data = super(PersonSet, self).format_data_set()
+        data['is_organization'] = False
+        return data
 
 
 class OrganizationSet(ContactSet):
@@ -86,10 +86,10 @@ class OrganizationSet(ContactSet):
     FILTERS = {k: ContactSet.FILTERS[k] for k in ContactSet.FILTERS if k not in ['is_organization', 'contact_id']}
     _ITEM = Organization
 
-    def params(self):
-        params = super(OrganizationSet, self).params()
-        params['is_organization'] = True
-        return params
+    def format_data_set(self):
+        data = super(OrganizationSet, self).format_data_set()
+        data['is_organization'] = True
+        return data
 
 
 class DealSet(Collection):
@@ -112,14 +112,14 @@ class DealSet(Collection):
         'updated_at',
     ]
 
-    def params(self):
-        params = super(DealSet, self).params()
-        if 'city' in params:
-            params['city'] = str(params['city']).lower()
-        if 'region' in params:
-            params['region'] = str(params['region']).lower()
-        if 'country' in params:
-            params['country'] = str(params['country']).lower()
+    def format_data_set(self):
+        data = super(DealSet, self).format_data_set()
+        if 'city' in data:
+            data['city'] = str(data['city']).lower()
+        if 'region' in data:
+            data['region'] = str(data['region']).lower()
+        if 'country' in data:
+            data['country'] = str(data['country']).lower()
 
 
 class DealContactSet(Collection):
@@ -152,7 +152,7 @@ class DealContactSet(Collection):
             page.append(item)
         return page
 
-    def params(self):
+    def format_data_set(self):
         if self.id is None:
             raise ReferenceError('')
 
@@ -177,14 +177,14 @@ class LeadSet(Collection):
         'created_at'
     ]
 
-    def params(self):
-        params = super(LeadSet, self).params()
-        if 'city' in params:
-            params['city'] = str(params['city']).lower()
-        if 'region' in params:
-            params['region'] = str(params['region']).lower()
-        if 'country' in params:
-            params['country'] = str(params['country']).lower()
+    def format_data_set(self):
+        data = super(LeadSet, self).format_data_set()
+        if 'city' in data:
+            data['city'] = str(data['city']).lower()
+        if 'region' in data:
+            data['region'] = str(data['region']).lower()
+        if 'country' in data:
+            data['country'] = str(data['country']).lower()
 
 
 class LossReasonSet(Collection):

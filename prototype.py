@@ -2,6 +2,8 @@
 """Provides interfaces and prototypes for BaseAPI components"""
 
 import logging
+from pprint import pformat
+
 logger = logging.getLogger(__name__)
 
 import abc
@@ -61,7 +63,7 @@ class BaseCrmAuthentication(IBaseCrmAuthentication):
             raise ReferenceError("Refresh key not available.")
 
         url = "https://api.getbase.com/oauth2/token"
-        params = {
+        data = {
             'grant_type': 'refresh_token',
             'refresh_token': self._refresh_token,
         }
@@ -71,9 +73,9 @@ class BaseCrmAuthentication(IBaseCrmAuthentication):
 
         logger.debug("Preparing POST with:")
         logger.debug("url:  %s" % url)
-        logger.debug("params:  %s" % params)
+        logger.debug("format_data_get:  %s" % data)
         logger.debug("headers:  %s" % headers)
-        response = requests.post(url=url, params=params, headers=headers)
+        response = requests.post(url=url, params=data, headers=headers)
         logger.debug("Password response:\n%s" % response.text)
         self._access_token = response.json()['access_token']
         self._refresh_token = response.json()['refresh_token']
@@ -101,18 +103,37 @@ class Resource(Entity):
     Entity is the base class for standard BaseCRM API Client entities.
     """
     API_VERSION = 2
-    # Support v1 items nested under items like 'contact'
-    RESPONSE_KEY = 'data'
+    """
+    This is the top-level key for arrays sent to and received from the API.  This must be done because APIv1 responses
+    use a key that's specific to the response type.  For example, an APIv1 contact response is:
+
+        {
+            'contact': {
+                'name': ...
+                ...
+                }
+        }
+
+    Even though APIv2 standardizes on 'data', an APIv2 Entity must process a response like:
+
+        {
+            'data': {
+                'name': ...
+                ...
+                }
+        }
+    """
+    DATA_PARENT_KEY = 'data'
 
     def __init__(self, entity_id=None):
         if entity_id is not None and not isinstance(entity_id, int):
             raise TypeError("entity_id must be None or int")
         super(Resource, self).__init__()
-        self.data = dict()
-        self.dirty = dict()
-        self.loaded = False
+        self._data = dict()
+        self._dirty = dict()
+        self._loaded = False
         # This way, entity.id will never tell the user to call get()
-        self.data['id'] = entity_id
+        self._data['id'] = entity_id
         self.__initialized = True
 
     def __setattr__(self, key, value):
@@ -127,17 +148,21 @@ class Resource(Entity):
                 # the 'type' key (optionally a list) contains all accepted types
                 if 'type' in rules:
                     type = rules['type']
-                    if not isinstance(rules, list):
+                    if not isinstance(type, list):
                         type = [type]
-                    if value.__class__ not in type:
-                        raise TypeError("%s is not a valid type for %s" % value, key)
+                    match = False
+                    for t in type:
+                        if isinstance(value, t):
+                            match = True
+                    if not match:
+                        raise TypeError("%s is not a valid type for %s.%s" % (value, self.__class__.__name__, key))
                 # the 'in' key is a list of all acceptable values
                 if 'in' in rules and value not in rules['in']:
-                    raise ValueError("%s is not a valid value for #s" % value, key)
+                    raise ValueError("%s is not a valid value for %s.%s" % (value, self.__class__.__name__, key))
             # Otherwise, the PROPERTIES value is just the accepted type
             elif not isinstance(value, self.PROPERTIES[key]):
-                raise TypeError("%s must be of type %s" % (key, self.PROPERTIES[key].__name__))
-            self.dirty[key] = value
+                raise TypeError("%s.%s must be of type %s" % (self.__class__.__name__, key, self.PROPERTIES[key].__name__))
+            self._dirty[key] = value
         elif '_%s' % key in self.PROPERTIES:
             raise KeyError("%s is readonly for %s" % (key, self.__class__.__name__))
         else:
@@ -145,13 +170,15 @@ class Resource(Entity):
 
     def __getattr__(self, key):
         # If the value has been set locally, it will be found in dirty and may be returned
-        if key in self.dirty:
-            return self.dirty[key]
+        if key == '__deepcopy__':
+            return object.__deepcopy__
+        if key in self._dirty:
+            return self._dirty[key]
         # 'id' must always return, either from data (where it is usually set) or None (thanks to PROPERTIES checks)
-        if key != 'id' and not self.loaded:
+        if key != 'id' and not self._loaded:
             raise ReferenceError("Object has not been loaded. Use get() to populate data before requesting %s." % key)
-        if key in self.data:
-            return self.data[key]
+        if key in self._data:
+            return self._data[key]
         # Acknowledge property is valid by returning None
         if key in self.PROPERTIES:
             return None
@@ -162,36 +189,17 @@ class Resource(Entity):
 
     def set_data(self, data):
         """
-        Sets the local object to the values indicated in the 'data' array.  For backwards compatibility reasons, this
-        array contains the top-level key.  This must be done because APIv1 responses use a key that's specific to the
-        response type.  For example, an APIv1 contact response is:
-
-            {
-                'contact': {
-                    'name': ...
-                    ...
-                    }
-            }
-
-        Even though APIv2 standardizes on 'data', an APIv2 Entity must process a response like:
-
-            {
-                'data': {
-                    'name': ...
-                    ...
-                    }
-            }
-
-        This function uses the helper format_data() to allow objects to, for example, convert elements of the response
-        into more usable types. For more information on this process, see format_data().
+        Sets the local object to the values indicated in the 'data' array. This function uses the helper
+        format_data_set() to allow objects to, for example, convert elements of the response into more usable types.
+        For more information on this process, see format_data_set().
         """
         # Assign actual data to self
-        self.__dict__['data'] = self.format_data(data[self.RESPONSE_KEY])
+        self.__dict__['_data'] = self.format_data_set(data)
         # Mark data as loaded
         self.__dict__['loaded'] = True
         return self  # returned for setting and chaining convenience
 
-    def format_data(self, data):
+    def format_data_set(self, data):
         """
         Objects should overload this function to adjust the input, including converting elements into custom types.
         For example,
@@ -201,10 +209,15 @@ class Resource(Entity):
         """
         return data  # returned for setting and chaining convenience
 
-    def params(self):
-        params = deepcopy(self.dirty)
+    def get_data(self):
+        data = self.format_data_get(deepcopy(self._dirty))
         # If needed, ID is encoded in URL
-        return params
+        return {self.DATA_PARENT_KEY: data}
+
+    def format_data_get(self, dirty):
+        data = deepcopy(dirty)
+        # If needed, ID is encoded in URL
+        return data
 
 
 class ResourceV1(Resource):
@@ -220,14 +233,16 @@ class ResourceV1(Resource):
             url += '/%d' % self.id
         return url + '.json'
 
-    def params(self):
-        params = {
-            self.RESPONSE_KEY: deepcopy(self.dirty)
+    def get_data(self):
+        dirty = self.format_data_get(deepcopy(self._dirty))
+
+        data = {
+            self.DATA_PARENT_KEY: dirty
             # e.g. 'contact': {'name': ...}
         }
 
         # to generate ?contact[name]=...
-        return _key_coded_dict(params)
+        return _key_coded_dict(data)
 
 
 class Collection(Entity):
@@ -257,10 +272,10 @@ class Collection(Entity):
         else:
             raise AttributeError("%s is not a valid filter for %s" % (key, self.__class__.__name__))
 
-    def params(self):
-        params = deepcopy(self.filters)
+    def get_data(self):
+        data = deepcopy(self.filters)
         # If needed, ID is encoded in URL
-        return params
+        return data
 
     def format_page(self, data):
         # Return a page containing API data processed into Resources and Collections
@@ -283,12 +298,12 @@ class CollectionV1(Collection):
         url = 'https://app.futuresimple.com/apis/%s/api/v%d/%s' % (self.RESOURCE, self.API_VERSION, self._PATH)
         return url + '/search.json'
 
-    def params(self):
-        params = {
+    def format_data_set(self):
+        data = {
             self.RESPONSE_KEY: deepcopy(self.filters)
             # e.g. 'contact': {'name': ...}
         }
 
         # to generate ?contact[name]=...
-        return _key_coded_dict(params)
+        return _key_coded_dict(data)
 

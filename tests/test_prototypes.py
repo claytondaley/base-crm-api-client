@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 from mock import Mock
 from nose.tools import assert_raises, eq_
 from prototype import Resource
+from tests.test_common import SAMPLES
 
 __author__ = 'Clayton Daley III'
 __copyright__ = "Copyright 2015, Clayton Daley III"
@@ -29,82 +30,68 @@ def getattr_typeerror(object_, attribute):
 
 
 def setattr_eq(object_, attribute, value):
-        setattr(object_, attribute, value)
-        eq_(object_.__dict__['dirty'][attribute], value)
+        object_.__setattr__(attribute, value)
+        eq_(getattr(object_, attribute), value)
 
 
 def setattr_attributeerror(object_, attribute, value):
-    assert_raises(AttributeError, setattr, object_, attribute, value)
+    assert_raises(AttributeError, object_.__setattr__, attribute, value)
 
 
 def setattr_keyerror(object_, attribute, value):
-    assert_raises(KeyError, setattr, object_, attribute, value)
+    assert_raises(KeyError, object_.__setattr__, attribute, value)
 
 
 def setattr_typeerror(object_, attribute, value):
-    assert_raises(TypeError, setattr, object_, attribute, value)
+    assert_raises(TypeError, object_.__setattr__, attribute, value)
 
 
-class ResourceStub(Resource):
+class PropertiesStub(Resource):
     PROPERTIES = {
         '_readonly': object,
         'editable': object,
-        'int': int,
-        'basestring': basestring,
-        'list': list,
-        'dict': dict,
-        'mock': Mock,
-        'rules': {
-
-        }
     }
-
-SAMPLES = {
-    'int': 23,
-    'basestring': 'a special string for you',
-    'list': ['a', 'b', 'z'],
-    'dict': {'a': 1, 'b': 'two', 'c': Mock()},
-    'mock': Mock(),
-}
 
 
 def test_resource_setattr_readonly():
     """
     Readonly attributes are indicated by a leading underscore and should throw a KeyError
     """
-    stub = ResourceStub()
+    stub = PropertiesStub()
     mock = Mock()
-    assert_raises(KeyError, setattr, stub, 'readonly', mock)
+    yield setattr_keyerror, stub, 'readonly', mock
 
 
 def test_resource_setattr_editable():
     """
     Editable attributes do not have a leading underscore and are stored inside the 'dirty' table
     """
-    stub = ResourceStub()
+    stub = PropertiesStub()
     mock = Mock()
-    stub.editable = mock
-    assert stub.__dict__['dirty']['editable'] is mock
+    yield setattr_eq, stub, 'editable', mock
 
 
 def test_resource_setattr_nonproperty():
     """
     If an attribute is not a member of properties, an AttributeError should be generated
     """
-    stub = ResourceStub()
+    stub = PropertiesStub()
     mock = Mock()
-    assert_raises(AttributeError, setattr, stub, 'nonproperty', mock)
+    yield setattr_attributeerror, stub, 'nonproperty', mock
 
 
-def test_generator_typechecking_setattr():
+def test_generator_setattr_typechecking():
     """
     setattr should provide type checking based on PROPERTIES definition
     """
     for type in SAMPLES:
-        # Non-matching types should result in TypeError
-        for sample in {k: SAMPLES[k] for k in SAMPLES if k != type}:
-            stub = ResourceStub()
-            yield setattr_typeerror, stub, type, SAMPLES[sample]
-        stub = ResourceStub()
-        # Matching types should get set to stub.dirty
-        yield setattr_eq, stub, type, SAMPLES[type]
+        mock = Mock(Resource)
+        setattr(mock, 'PROPERTIES', {'key': type})
+        setattr(mock, '_dirty', dict())
+        for t2, samples in SAMPLES.iteritems():
+            if not isinstance(t2, type):
+                for sample in samples:
+                    yield setattr_eq, mock, 'key', sample
+            else:
+                for sample in samples:
+                    yield setattr_typeerror, mock, 'key', sample

@@ -4,7 +4,7 @@
 import logging
 logger = logging.getLogger(__name__)
 
-from prototype import Resource, Entity
+from prototype import Resource
 
 __author__ = 'Clayton Daley III'
 __copyright__ = "Copyright 2015, Clayton Daley III"
@@ -16,10 +16,10 @@ __status__ = "Development"
 
 class Account(Resource):
     _PATH = "accounts"
+    """
+    Read-only attributes are preceded by an underscore
+    """
     PROPERTIES = {
-        """
-        Read-only attributes are preceded by an underscore
-        """
         '_id': int,
         '_name': basestring,
         '_currency': basestring,
@@ -32,14 +32,15 @@ class Account(Resource):
 
     def __init__(self):
         super(Account, self).__init__()
-        self.__dict__['data']['id'] = 'self'
+        # Account only works to load the "ID" /self
+        self.__dict__['_data']['id'] = 'self'
 
 
 class Address(Resource):
+    """
+    Read-only attributes are preceded by an underscore
+    """
     PROPERTIES = {
-        """
-        Read-only attributes are preceded by an underscore
-        """
         'line1': basestring,
         'city': basestring,
         'postal_code': basestring,
@@ -53,10 +54,10 @@ class Address(Resource):
 
 class Contact(Resource):
     _PATH = "contacts"
+    """
+    Read-only attributes are preceded by an underscore
+    """
     PROPERTIES = {
-        """
-        Read-only attributes are preceded by an underscore
-        """
         '_id': int,
         '_creator_id': int,
         '_owner_id': int,
@@ -95,13 +96,14 @@ class Contact(Resource):
 
     def set_data(self, data):
         super(Contact, self).set_data(data)
+        # Mutate last
         if data['data']['is_organization']:
-            Entity.__setattr__(self, '__class__', Organization)
+            object.__setattr__(self, '__class__', Organization)
         else:
-            Entity.__setattr__(self, '__class__', Person)
+            object.__setattr__(self, '__class__', Person)
         return self  # returned for setting and chaining convenience
 
-    def format_data(self, data):
+    def format_data_set(self, data):
         for k, v in data.iteritems():
             if k == 'address':
                 address = Address()
@@ -111,10 +113,13 @@ class Contact(Resource):
 
 
 class Person(Contact):
+    """
+    A specialization of the Contact object that assumes is_organization=False and enforces related business rules.
+    """
+    """
+    Read-only attributes are preceded by an underscore
+    """
     PROPERTIES = {
-        """
-        Read-only attributes are preceded by an underscore
-        """
         '_id': int,
         '_creator_id': int,
         'owner_id': int,
@@ -146,26 +151,34 @@ class Person(Contact):
 
     def __init__(self, entity_id=None):
         super(Person, self).__init__(entity_id)
-        self.dirty['is_organization'] = False
+        self._dirty['is_organization'] = False
 
-    def params(self):
-        params = super(Person, self).params()
+    def format_data_get(self):
+        data = super(Person, self).format_data_get()
         # Check business rules
         # If ID is not None, assume an update
         if self.id is None:
             # Otherwise, both first_name and last_name are required for a Person
-            if 'first_name' not in params or params['first_name'] is None or \
-                    'last_name' not in params or params['last_name'] is None:
+            if 'first_name' not in data or data['first_name'] is None or \
+                    'last_name' not in data or data['last_name'] is None:
                 raise ValueError("first_name and last_name must be set unless an id is provided")
         # Other checks for the type of action (get, post, put, delete) are made in client
-        return params
+        return data
+
+    def format_data_set(self, data):
+        if data['is_organization']:
+            raise ValueError('Data for Organization provided to Person')
+        super(Person, self).format_data_set(data)
 
 
 class Organization(Contact):
+    """
+    A specialization of the Contact object that assumes is_organization=True and enforces related business rules.
+    """
+    """
+    Read-only attributes are preceded by an underscore
+    """
     PROPERTIES = {
-        """
-        Read-only attributes are preceded by an underscore
-        """
         '_id': int,
         '_creator_id': int,
         'owner_id': int,
@@ -197,26 +210,31 @@ class Organization(Contact):
 
     def __init__(self, entity_id=None):
         super(Organization, self).__init__(entity_id)
-        self.dirty['is_organization'] = True
+        self._dirty['is_organization'] = True
 
-    def params(self):
-        params = super(Person, self).params()
+    def format_data_get(self, dirty):
+        data = super(Person, self).format_data_get(dirty)
         # Check business rules
         # If ID is not None, assume an update
         if self.id is None:
             # Otherwise, name is required for an Organization
-            if 'name' not in params or params['name'] is None:
+            if 'name' not in data or data['name'] is None:
                 raise ValueError("name must be set unless an id is provided")
         # Other checks for the type of action (get, post, put, delete) are made in client
-        return params
+        return data
+
+    def format_data_set(self, data):
+        if not data['is_organization']:
+            raise ValueError('Data for Person provided to Organization')
+        super(Organization, self).format_data_set(data)
 
 
 class Deal(Resource):
     _PATH = "deals"
+    """
+    Read-only attributes are preceded by an underscore
+    """
     PROPERTIES = {
-        """
-        Read-only attributes are preceded by an underscore
-        """
         '_id': int,
         '_creator_id': int,
         'owner_id': int,
@@ -242,10 +260,10 @@ class DealContact(Resource):
     ROLES = [
         'involved'
     ]
+    """
+    Read-only attributes are preceded by an underscore
+    """
     PROPERTIES = {
-        """
-        Read-only attributes are preceded by an underscore
-        """
         '_deal': Deal,
         '_contact': Contact,
         'role': {
@@ -259,7 +277,7 @@ class DealContact(Resource):
 
     @property
     def URL(self, debug=False):
-        return self.data.deal.PATH(debug) + "/%s/%s" % (self.API_VERSION, self._PATH, self.id)
+        return self._data.deal.PATH(debug) + "/%s/%s" % (self.API_VERSION, self._PATH, self.id)
 
     def __init__(self, deal, contact):
         if deal.id is None:
@@ -273,10 +291,10 @@ class DealContact(Resource):
 
 class Lead(Resource):
     _PATH = "leads"
+    """
+    Read-only attributes are preceded by an underscore
+    """
     PROPERTIES = {
-        """
-        Read-only attributes are preceded by an underscore
-        """
         '_id': int,
         '_creator_id': int,
         'owner_id': int,
@@ -303,17 +321,12 @@ class Lead(Resource):
         '_updated_at': basestring,
     }
 
-    def set_data(self, data):
-        local = self.__dict__
-        local['data'] = dict()
-        for k, v in data['data'].items():
+    def format_data_set(self, data):
+        for k, v in data.iteritems():
             if k == 'address':
                 address = Address()
                 address.set_data({'data': v})
-                local[k] = address
-            else:
-                local[k] = v
-        local['loaded'] = True
+                data[k] = address
 
 
 class LossReason(Resource):
@@ -332,34 +345,59 @@ class LossReason(Resource):
 
 class Note(Resource):
     _PATH = "notes"
-    RESOURCE_TYPES = [
-        'lead',
-        'contact',
-        'deal',
-    ]
+    RESOURCE_TYPES = {
+        'lead': Lead,
+        'contact': Contact,
+        'deal': Deal,
+    }
+    """
+    Read-only attributes are preceded by an underscore
+    """
     PROPERTIES = {
-        """
-        Read-only attributes are preceded by an underscore
-        """
         '_id': int,
         '_creator_id': int,
-        'resource_type': {
-            'type': basestring,
-            'in': RESOURCE_TYPES
+        'resource': {
+            'type': [
+                Contact,
+                Deal,
+                Lead,
+            ]
         },
-        'resource_id': int,
         'content': basestring,
         '_created_at': basestring,
         '_updated_at': basestring,
     }
 
+    def format_data_set(self, data):
+        """
+        Input is:
+        ...
+        'resource_type': {
+            'type': basestring,
+            'in': RESOURCE_TYPES
+        },
+        'resource_id': int,
+        ...
+        """
+        class_ = self.RESOURCE_TYPES[data['resource']]
+        data['resource'] = class_(data['resource_id'])
+        del data['resource_id']
+        return data
+
+    def format_data_get(self, dirty):
+        data = super(Note, self).format_data_get(dirty)
+        if 'resource' in data:
+            data['resource_id'] = data['resource'].id
+            data['resource'] = data['resource'].__class__.__name__.lower()
+        return data
+
 
 class Pipeline(Resource):
     _PATH = "pipelines"
+    """
+    Read-only attributes are preceded by an underscore
+    """
     PROPERTIES = {
-        """
-        Read-only attributes are preceded by an underscore
-        """
         '_id': int,
         '_name': basestring,
         '_created_at': basestring,
@@ -369,10 +407,10 @@ class Pipeline(Resource):
 
 class Source(Resource):
     _PATH = "sources"
+    """
+    Read-only attributes are preceded by an underscore
+    """
     PROPERTIES = {
-        """
-        Read-only attributes are preceded by an underscore
-        """
         '_id': int,
         '_creator_id': int,
         'name': basestring,
@@ -383,10 +421,10 @@ class Source(Resource):
 
 class Stage(Resource):
     _PATH = "stages"
+    """
+    Read-only attributes are preceded by an underscore
+    """
     PROPERTIES = {
-        """
-        Read-only attributes are preceded by an underscore
-        """
         '_id': int,
         '_name': basestring,
         '_category': basestring,
@@ -406,10 +444,10 @@ class Tag(Resource):
         'contact',
         'deal',
     ]
+    """
+    Read-only attributes are preceded by an underscore
+    """
     PROPERTIES = {
-        """
-        Read-only attributes are preceded by an underscore
-        """
         '_id': int,
         '_creator_id': int,
         'name': basestring,
@@ -424,23 +462,25 @@ class Tag(Resource):
 
 class Task(Resource):
     _PATH = "tasks"
-    RESOURCE_TYPES = [
-        'lead',
-        'contact',
-        'deal',
-    ]
+    RESOURCE_TYPES = {
+        'lead': Lead,
+        'contact': Contact,
+        'deal': Deal,
+    }
+    """
+    Read-only attributes are preceded by an underscore
+    """
     PROPERTIES = {
-        """
-        Read-only attributes are preceded by an underscore
-        """
         '_id': int,
         '_creator_id': int,
         'owner_id': int,
-        'resource_type': {
-            'type': basestring,
-            'in': RESOURCE_TYPES
+        'resource': {
+            'type': [
+                Contact,
+                Deal,
+                Lead,
+            ]
         },
-        'resource_id': int,
         'completed': bool,
         '_completed_at': basestring,
         'due_date': basestring,
@@ -450,6 +490,29 @@ class Task(Resource):
         '_created_at': basestring,
         '_updated_at': basestring,
     }
+
+    def format_data_set(self, data):
+        """
+        Input is:
+        ...
+        'resource_type': {
+            'type': basestring,
+            'in': RESOURCE_TYPES
+        },
+        'resource_id': int,
+        ...
+        """
+        class_ = self.RESOURCE_TYPES[data['resource']]
+        data['resource'] = class_(data['resource_id'])
+        del data['resource_id']
+        return data
+
+    def format_data_get(self, dirty):
+        data = super(Task, self).format_data_get(dirty)
+        if 'resource' in data:
+            data['resource_id'] = data['resource'].id
+            data['resource'] = data['resource'].__class__.__name__.lower()
+        return data
 
 
 class User(Resource):
@@ -462,10 +525,10 @@ class User(Resource):
         'user',
         'admin',
     ]
+    """
+    Read-only attributes are preceded by an underscore
+    """
     PROPERTIES = {
-        """
-        Read-only attributes are preceded by an underscore
-        """
         '_id': int,
         '_name': basestring,
         '_email': basestring,

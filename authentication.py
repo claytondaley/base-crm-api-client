@@ -38,7 +38,7 @@ class Password(BaseCrmAuthentication):
 
         logger.debug("Preparing POST with:")
         logger.debug("url:  %s" % url)
-        logger.debug("params:  %s" % data)
+        logger.debug("format_data_get:  %s" % data)
         logger.debug("headers:  %s" % headers)
         response = requests.post(url=url, data=data, headers=headers)
         logger.debug("Password response:\n%s" % response.text)

@@ -51,7 +51,7 @@ class BaseAPI(object):
 
     def get(self, entity):
         if not isinstance(entity, Resource):
-            TypeError("Must submit Resource to get()")
+            raise TypeError("Can only get() a Resource")
 
         logger.debug("Preparing GET with:")
         logger.debug("url:  %s" % entity.URL(self.debug))
@@ -60,7 +60,7 @@ class BaseAPI(object):
 
         if requests.codes.multiple_choices > response.status_code >= requests.codes.ok:
             print("GET SUCCESS:  %s" % response.text)
-            entity.set_data(response.json())
+            entity.set_data(response.json()[entity.DATA_PARENT_KEY])
         else:
             print("GET ERROR:  %s" % response.text)
         # entity is mutable, but this simplifies chaining and assignment
@@ -72,9 +72,11 @@ class BaseAPI(object):
         if entity.id is None:
             raise ValueError("ID must be set to save(), use create() instead")
 
-        data = {'data': entity.params()}
+        data = entity.get_data()
         if len(data) == 0:
-            raise ValueError("No data to save.")
+            raise ValueError("No data to save()")
+        # Wrap the item in the relevant key
+        data = {entity.DATA_PARENT_KEY: data}
 
         headers = self.auth.headers(entity.API_VERSION)
         headers['Content-Type'] = 'application/json'
@@ -86,8 +88,8 @@ class BaseAPI(object):
         response = requests.put(url=entity.URL(self.debug), headers=headers, data=json.dumps(data))
 
         if requests.codes.multiple_choices > response.status_code >= requests.codes.ok:
-            print("PUT:  %s" % response.text)
-            entity.set_data(response.json())
+            print("PUT SUCCESS:  %s" % response.text)
+            entity.set_data(response.json()[entity.DATA_PARENT_KEY])
         else:
             print("PUT ERROR:  %s" % response.text)
         # entity is mutable, but this simplifies chaining and assignment
@@ -99,9 +101,11 @@ class BaseAPI(object):
         if entity.id is not None:
             raise ValueError("Contact already exists, use save() instead of create()")
 
-        data = {'data': entity.params()}
+        data = entity.get_data()
         if len(data) == 0:
-            raise ValueError("No data to save.")
+            raise ValueError("No data for create()")
+        # Wrap the item in the relevant key
+        data = {entity.DATA_PARENT_KEY: data}
 
         headers = self.auth.headers(entity.API_VERSION)
         headers['Content-Type'] = 'application/json'
@@ -114,7 +118,7 @@ class BaseAPI(object):
 
         if requests.codes.multiple_choices > response.status_code >= requests.codes.ok:
             print("POST SUCCESS:  %s" % response.text)
-            entity.set_data(response.json())
+            entity.set_data(response.json()[entity.DATA_PARENT_KEY])
         else:
             print("POST ERROR:  %s" % response.text)
         # entity is mutable, but this simplifies chaining and assignment
@@ -142,30 +146,30 @@ class BaseAPI(object):
 
         url = entity.URL(self.debug)
         headers = self.auth.headers(entity.API_VERSION)
-        # Add page, per_page, and order_by to params
-        params = entity.params()
-        params['page'] = page
-        params['per_page'] = per_page
+        # Add page, per_page, and order_by to format_data_get
+        data = entity.format_data_set()
+        data['page'] = page
+        data['per_page'] = per_page
 
         # clean up boolean formatting
-        for k, v in params.iteritems():
-            if isinstance(params[k], bool):
-                if params[k]:
-                    params[k] = 'true'
+        for k, v in data.iteritems():
+            if isinstance(data[k], bool):
+                if data[k]:
+                    data[k] = 'true'
                 else:
-                    params[k] = 'false'
+                    data[k] = 'false'
 
         logger.debug("Preparing GET with:")
         logger.debug("url:  %s" % entity.URL(self.debug))
         logger.debug("headers:  %s" % headers)
-        logger.debug("params:  %s" % params)
+        logger.debug("format_data_get:  %s" % data)
 
         if order_by is not None:
             if order_by not in entity.ORDERS:
                 raise ValueError('%s is not a valid sort order for %s' % order_by, entity.__class__.__name__)
-            params['order_by'] = order_by
+            data['order_by'] = order_by
 
-        response = requests.get(url=url, params=params, headers=headers)
+        response = requests.get(url=url, params=data, headers=headers)
 
         if requests.codes.multiple_choices > response.status_code >= requests.codes.ok:
             print("GET SUCCESS:  %s" % response.text)

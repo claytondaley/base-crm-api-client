@@ -56,7 +56,7 @@ class Contact(ResourceV1):
     RESOURCE = 'crm'
     API_VERSION = 1
     _PATH = 'contacts'
-    RESPONSE_KEY = 'contact'
+    DATA_PARENT_KEY = 'contact'
     PROPERTIES = {
         """
         Read-only attributes are preceded by an underscore
@@ -109,7 +109,7 @@ class Contact(ResourceV1):
     def set_data(self, data):
         super(Contact, self).set_data(data)
 
-    def format_data(self, data):
+    def format_data_set(self, data):
         # Return a page containing API data processed into Resources and Collections
         if 'organisation' in data:
             organisation = Contact()
@@ -124,7 +124,7 @@ class ContactSet(CollectionV1):
     RESOURCE = 'crm'
     API_VERSION = 1
     _PATH = Contact._PATH
-    RESPONSE_KEY = Contact.RESPONSE_KEY
+    RESPONSE_KEY = Contact.DATA_PARENT_KEY
     FILTERS = {
         'user_id',
         'city',  # All lower
@@ -154,17 +154,17 @@ class ContactSet(CollectionV1):
         'calls_to_action,last'
     ]
 
-    def params(self):
-        params = deepcopy(self.filters)
-        if 'city' in params:
-            params['city'] = str(params['city']).lower()
-        if 'region' in params:
-            params['region'] = str(params['region']).lower()
-        if 'country' in params:
-            params['country'] = str(params['country']).lower()
-        if 'tags' in params:
-            params['tags'] = str(','.join(params['tags'])).lower()
-        return _key_coded_dict({self.RESPONSE_KEY: params})
+    def format_data_set(self):
+        data = deepcopy(self.filters)
+        if 'city' in data:
+            data['city'] = str(data['city']).lower()
+        if 'region' in data:
+            data['region'] = str(data['region']).lower()
+        if 'country' in data:
+            data['country'] = str(data['country']).lower()
+        if 'tags' in data:
+            data['tags'] = str(','.join(data['tags'])).lower()
+        return _key_coded_dict({self.RESPONSE_KEY: data})
 
 
 class Lead(ResourceV1):
@@ -197,7 +197,7 @@ class Lead(ResourceV1):
         #        'private',
     ]
 
-    def params(self):
+    def format_data_get(self):
         pass
 
 
@@ -228,14 +228,14 @@ class LeadSet(CollectionV1):
         'user_id',
     ]
 
-    def params(self):
-        params = deepcopy(self.filters)
-        if 'city' in params:
-            params['city'] = str(params['city']).lower()
-        if 'region' in params:
-            params['region'] = str(params['region']).lower()
-        if 'country' in params:
-            params['country'] = str(params['country']).lower()
+    def format_data_set(self):
+        data = deepcopy(self.filters)
+        if 'city' in data:
+            data['city'] = str(data['city']).lower()
+        if 'region' in data:
+            data['region'] = str(data['region']).lower()
+        if 'country' in data:
+            data['country'] = str(data['country']).lower()
 
 
 class Deal(ResourceV1):
@@ -252,7 +252,7 @@ class Deal(ResourceV1):
         'stage',
     ]
 
-    def params(self):
+    def format_data_get(self):
         pass
 
 
@@ -288,13 +288,13 @@ class DealSet(CollectionV1):
         # Pulls full source record (user_id, name, created_at, updated_at, created_via, deleted_at, id, account_id
     ]
 
-    def params(self):
-        params = deepcopy(self.filters)
-        if 'city' in params:
-            params['city'] = str(params['city']).lower()
-        if 'region' in params:
-            params['region'] = str(params['region']).lower()
-        if 'country' in params:
-            params['country'] = str(params['country']).lower()
+    def format_data_set(self):
+        data = deepcopy(self.filters)
+        if 'city' in data:
+            data['city'] = str(data['city']).lower()
+        if 'region' in data:
+            data['region'] = str(data['region']).lower()
+        if 'country' in data:
+            data['country'] = str(data['country']).lower()
 
 

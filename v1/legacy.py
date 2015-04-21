@@ -55,7 +55,7 @@ class LegacyService(object):
     ##########################
     def _build_feed_resource(self, contact_id=None, lead_id=None, deal_id=None, type=None, timestamp=None):
         """
-        Returns a tuple of URL (without parameters) and params that will produce a list of activities (i.e. feed) in
+        Returns a tuple of URL (without parameters) and format_data_get that will produce a list of activities (i.e. feed) in
         batches of 20.
 
         ARGUMENTS
@@ -247,7 +247,7 @@ class LegacyService(object):
     ##########################
     def _build_tags_resource(self, tag_id=None, app_id=None, page=None):
         """
-        Returns a tuple of URL (without parameters) and params to obtain a list of tags in batches of 20
+        Returns a tuple of URL (without parameters) and format_data_get to obtain a list of tags in batches of 20
 
         ARGUMENTS
 
@@ -385,7 +385,7 @@ class LegacyService(object):
     def _build_taggings_resource(self, tag_list, method='add', contact_id=None, deal_id=None, lead_id=None,
                                  contact_ids=None, deal_ids=None, lead_ids=None):
         """
-        Returns a tuple of URL (without parameters) and params to modify object tags
+        Returns a tuple of URL (without parameters) and format_data_get to modify object tags
 
         ARGUMENTS
 
@@ -774,7 +774,7 @@ class LegacyService(object):
     ##########################
     def _build_note_resource(self, note_id=None, contact_id=None, deal_id=None, lead_id=None, page=None):
         """
-        Returns a tuple of URL (without parameters) and params to get notes matching filter criteria in batches of 20
+        Returns a tuple of URL (without parameters) and format_data_get to get notes matching filter criteria in batches of 20
 
         Parent Objects (optional, include only one):
             contact_id
@@ -1009,7 +1009,7 @@ class LegacyService(object):
     def _build_task_resource(self, task_id=None, contact_id=None, lead_id=None, deal_id=None, status=None, due=None,
                              due_range=None, page=1):
         """
-        Returns a tuple of URL (without parameters) and params to get tasks in batches of 20.
+        Returns a tuple of URL (without parameters) and format_data_get to get tasks in batches of 20.
 
         ARGUMENTS
 
@@ -1260,7 +1260,7 @@ class LegacyService(object):
     ##########################
     def _build_reminder_resource(self, reminder_id=None, contact_id=None, deal_id=None, format=None):
         """
-        Returns a tuple of URL (without parameters) and params to get reminders meeting the filter criteria
+        Returns a tuple of URL (without parameters) and format_data_get to get reminders meeting the filter criteria
 
         Parent Object (optional, include only one):
             contact_id
@@ -1340,7 +1340,7 @@ class LegacyService(object):
     def _build_contact_resource(self, contact_id=None, contact_ids=None, company_id=None, deal_id=None,
                                 page=1, per_page=None, format=None):
         """
-        Returns a tuple of URL (without parameters) and params to get contacts that meet filter criteria in batches
+        Returns a tuple of URL (without parameters) and format_data_get to get contacts that meet filter criteria in batches
         of 20
 
         ARGUMENTS
@@ -1652,7 +1652,7 @@ class LegacyService(object):
     def _build_deal_resource(self, deal_id=None, deal_ids=None, contact_ids=None, stage=None, page=1, per_page=None,
                              format=None):
         """
-        Returns a tuple of URL (without parameters) and params to get deal objects meeting filter criteria
+        Returns a tuple of URL (without parameters) and format_data_get to get deal objects meeting filter criteria
 
         ARGUMENTS
 
@@ -1917,7 +1917,7 @@ class LegacyService(object):
 
     def _build_sources_resource(self, source_id=None, type='all', format=None):
         """
-        Returns a tuple of URL (without parameters) and params to get source objects meeting filter criteria
+        Returns a tuple of URL (without parameters) and format_data_get to get source objects meeting filter criteria
 
         ARGUMENTS
 
@@ -2005,7 +2005,7 @@ class LegacyService(object):
 
     def _build_lead_resource(self, lead_id=None, page=None, per_page=None, format=None):
         """
-        Returns a tuple of URL (without parameters) and params to get lead objects meeting filter criteria
+        Returns a tuple of URL (without parameters) and format_data_get to get lead objects meeting filter criteria
 
         ARGUMENTS
 
