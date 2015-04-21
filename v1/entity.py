@@ -59,7 +59,7 @@ class Contact(ResourceV1):
     RESPONSE_KEY = 'contact'
     PROPERTIES = {
         """
-        Read-only attributes are proceeded by an underscore
+        Read-only attributes are preceded by an underscore
         """
         # Commented items are not listed as valid PUT/POST variables
         # Private items are not listed, but are almost certainly not allowed

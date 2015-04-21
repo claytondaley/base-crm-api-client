@@ -4,7 +4,7 @@
 import logging
 logger = logging.getLogger(__name__)
 
-from prototype import Resource
+from prototype import Resource, Entity
 
 __author__ = 'Clayton Daley III'
 __copyright__ = "Copyright 2015, Clayton Daley III"
@@ -18,7 +18,7 @@ class Account(Resource):
     _PATH = "accounts"
     PROPERTIES = {
         """
-        Read-only attributes are proceeded by an underscore
+        Read-only attributes are preceded by an underscore
         """
         '_id': int,
         '_name': basestring,
@@ -38,7 +38,7 @@ class Account(Resource):
 class Address(Resource):
     PROPERTIES = {
         """
-        Read-only attributes are proceeded by an underscore
+        Read-only attributes are preceded by an underscore
         """
         'line1': basestring,
         'city': basestring,
@@ -55,7 +55,7 @@ class Contact(Resource):
     _PATH = "contacts"
     PROPERTIES = {
         """
-        Read-only attributes are proceeded by an underscore
+        Read-only attributes are preceded by an underscore
         """
         '_id': int,
         '_creator_id': int,
@@ -94,29 +94,33 @@ class Contact(Resource):
         super(Contact, self).__init__(entity_id)
 
     def set_data(self, data):
-        for k, v in data['data'].items():
+        super(Contact, self).set_data(data)
+        if data['data']['is_organization']:
+            Entity.__setattr__(self, '__class__', Organization)
+        else:
+            Entity.__setattr__(self, '__class__', Person)
+        return self  # returned for setting and chaining convenience
+
+    def format_data(self, data):
+        for k, v in data.iteritems():
             if k == 'address':
                 address = Address()
                 address.set_data({'data': v})  # Nest back in a 'data' key to use default processor
                 data[k] = address
-        if data['is_organization']:
-            self.__class__ = Organization
-        else:
-            self.__class__ = Person
         return data  # data is mutable, but this simplifies chaining and inline assignment
 
 
 class Person(Contact):
     PROPERTIES = {
         """
-        Read-only attributes are proceeded by an underscore
+        Read-only attributes are preceded by an underscore
         """
         '_id': int,
         '_creator_id': int,
         'owner_id': int,
         '_is_organization': bool,
         'contact_id': int,
-        'name': basestring,
+        '_name': basestring,  # API will accept value, but fails to update 'name' from "<First> <Last>"
         'first_name': basestring,
         'last_name': basestring,
         'customer_status': basestring,
@@ -158,7 +162,38 @@ class Person(Contact):
 
 
 class Organization(Contact):
-    PROPERTIES = Contact.PROPERTIES
+    PROPERTIES = {
+        """
+        Read-only attributes are preceded by an underscore
+        """
+        '_id': int,
+        '_creator_id': int,
+        'owner_id': int,
+        '_is_organization': bool,
+        'contact_id': int,
+        'name': basestring,  # API will accept value, but fails to update 'name' from "<First> <Last>"
+        '_first_name': basestring,
+        '_last_name': basestring,
+        'customer_status': basestring,
+        'prospect_status': basestring,
+        'title': basestring,
+        'description': basestring,
+        'industry': basestring,
+        'website': basestring,
+        'email': basestring,
+        'phone': basestring,
+        'mobile': basestring,
+        'fax': basestring,
+        'twitter': basestring,
+        'facebook': basestring,
+        'linkedin': basestring,
+        'skype': basestring,
+        'address': Address,
+        'tags': list,
+        'custom_fields': dict,
+        '_created_at': basestring,
+        '_updated_at': basestring,
+    }
 
     def __init__(self, entity_id=None):
         super(Organization, self).__init__(entity_id)
@@ -180,7 +215,7 @@ class Deal(Resource):
     _PATH = "deals"
     PROPERTIES = {
         """
-        Read-only attributes are proceeded by an underscore
+        Read-only attributes are preceded by an underscore
         """
         '_id': int,
         '_creator_id': int,
@@ -209,7 +244,7 @@ class DealContact(Resource):
     ]
     PROPERTIES = {
         """
-        Read-only attributes are proceeded by an underscore
+        Read-only attributes are preceded by an underscore
         """
         '_deal': Deal,
         '_contact': Contact,
@@ -240,7 +275,7 @@ class Lead(Resource):
     _PATH = "leads"
     PROPERTIES = {
         """
-        Read-only attributes are proceeded by an underscore
+        Read-only attributes are preceded by an underscore
         """
         '_id': int,
         '_creator_id': int,
@@ -285,7 +320,7 @@ class LossReason(Resource):
     _PATH = "loss_reasons"
     PROPERTIES = {
         """
-        Read-only attributes are proceeded by an underscore
+        Read-only attributes are preceded by an underscore
         """
         '_id': int,
         '_creator_id': int,
@@ -304,7 +339,7 @@ class Note(Resource):
     ]
     PROPERTIES = {
         """
-        Read-only attributes are proceeded by an underscore
+        Read-only attributes are preceded by an underscore
         """
         '_id': int,
         '_creator_id': int,
@@ -323,7 +358,7 @@ class Pipeline(Resource):
     _PATH = "pipelines"
     PROPERTIES = {
         """
-        Read-only attributes are proceeded by an underscore
+        Read-only attributes are preceded by an underscore
         """
         '_id': int,
         '_name': basestring,
@@ -336,7 +371,7 @@ class Source(Resource):
     _PATH = "sources"
     PROPERTIES = {
         """
-        Read-only attributes are proceeded by an underscore
+        Read-only attributes are preceded by an underscore
         """
         '_id': int,
         '_creator_id': int,
@@ -350,7 +385,7 @@ class Stage(Resource):
     _PATH = "stages"
     PROPERTIES = {
         """
-        Read-only attributes are proceeded by an underscore
+        Read-only attributes are preceded by an underscore
         """
         '_id': int,
         '_name': basestring,
@@ -373,7 +408,7 @@ class Tag(Resource):
     ]
     PROPERTIES = {
         """
-        Read-only attributes are proceeded by an underscore
+        Read-only attributes are preceded by an underscore
         """
         '_id': int,
         '_creator_id': int,
@@ -396,7 +431,7 @@ class Task(Resource):
     ]
     PROPERTIES = {
         """
-        Read-only attributes are proceeded by an underscore
+        Read-only attributes are preceded by an underscore
         """
         '_id': int,
         '_creator_id': int,
@@ -429,7 +464,7 @@ class User(Resource):
     ]
     PROPERTIES = {
         """
-        Read-only attributes are proceeded by an underscore
+        Read-only attributes are preceded by an underscore
         """
         '_id': int,
         '_name': basestring,

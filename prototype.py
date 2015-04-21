@@ -189,6 +189,7 @@ class Resource(Entity):
         self.__dict__['data'] = self.format_data(data[self.RESPONSE_KEY])
         # Mark data as loaded
         self.__dict__['loaded'] = True
+        return self  # returned for setting and chaining convenience
 
     def format_data(self, data):
         """
@@ -198,7 +199,7 @@ class Resource(Entity):
          - The v2 Contact object wraps the address up into an Address object
          - In v1, tags are sent as comma-separated lists that should be exploded into real lists
         """
-        return data  # data is mutable, but this simplifies inline assignment
+        return data  # returned for setting and chaining convenience
 
     def params(self):
         params = deepcopy(self.dirty)
