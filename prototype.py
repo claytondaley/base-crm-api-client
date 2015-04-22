@@ -2,8 +2,6 @@
 """Provides interfaces and prototypes for BaseAPI components"""
 
 import logging
-from pprint import pformat
-
 logger = logging.getLogger(__name__)
 
 import abc

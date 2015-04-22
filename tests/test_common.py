@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """Test the functionality of implemented Resources"""
+
 import logging
 logger = logging.getLogger(__name__)
 

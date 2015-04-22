@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 """Test the functionality of Prototypes"""
-from copy import copy
 
 import logging
-from pprint import pprint
-
 logger = logging.getLogger(__name__)
 
 from mock import Mock
