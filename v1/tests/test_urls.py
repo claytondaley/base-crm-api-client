@@ -18,8 +18,6 @@ https://app.futuresimple.com/apis/voice/api/v1/call_scripts.json
 # Contact Functions and Constants
 
 https://app.futuresimple.com/apis/crm/api/v1/contacts/40905764.json
-# For contacts attached to a deal
-https://app.futuresimple.com/apis/sales/api/v1/deals/1276628/contacts.json
 # Multiple ID
 https://app.futuresimple.com/apis/crm/api/v1/contacts.json?contact_ids=40905835%2C40905820&per_page=100
 # contact_id is parent
@@ -41,6 +39,16 @@ https://app.futuresimple.com/apis/crm/api/v1/custom_field_values/grouped.json
 
 https://app.futuresimple.com/apis/common/api/v1/feed/account_contacts_privacy.json
 """
+
+"""
+################
+# DealContacts
+
+# For contacts attached to a deal
+https://app.futuresimple.com/apis/sales/api/v1/deals/1276628/contacts.json
+
+"""
+
 
 """
 ##########################

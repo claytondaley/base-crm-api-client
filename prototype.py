@@ -137,23 +137,35 @@ class Resource(Entity):
         self.__initialized = True
 
     def __setattr__(self, key, value):
-        # If the __initialized flag isn't set yet, set the attribute normally
+        """Enforce business rules on attributes and store them in a special location"""
         if not '_Resource__initialized' in self.__dict__:
-            self.__dict__[key] = value
-            return
+            # If the __initialized flag isn't set yet, set the attribute normally
+            object.__setattr__(self, key, value)
+            return self
+        if key in self._dirty:
+            # Must nest because we don't want to check _data if a non-matching value is in _dirty
+            if value is self._dirty['key']:
+                # Compare using 'is' to ensure mutability is preserved, in which case we don't need to update
+                return self
+        elif key in self._data and value is self._data['key']:
+            # Compare using 'is' to ensure mutability is preserved, in which case we don't need to update
+            return self
         if key in self.PROPERTIES:
-            # If PROPERTIES contains a dict, this is a list of rules with which the value must comply
+            # PROPERTIES contains a dict -- a list of key-value pairs describing an attributes (PROPERTIES key) and the
+            # business rules that apply to its value (PROPERTIES value)
             if isinstance(self.PROPERTIES[key], dict):
                 rules = self.PROPERTIES[key]
                 # the 'type' key (optionally a list) contains all accepted types
                 if 'type' in rules:
-                    type = rules['type']
-                    if not isinstance(type, list):
-                        type = [type]
+                    # Get acceptable types and make sure they're in a list
+                    type_ = rules['type']
+                    if not isinstance(type_, list):
+                        type_ = [type_]
                     match = False
-                    for t in type:
+                    for t in type_:
                         if isinstance(value, t):
                             match = True
+                            break
                     if not match:
                         raise TypeError("%s is not a valid type for %s.%s" % (value, self.__class__.__name__, key))
                 # the 'in' key is a list of all acceptable values
@@ -163,6 +175,7 @@ class Resource(Entity):
             elif not isinstance(value, self.PROPERTIES[key]):
                 raise TypeError("%s.%s must be of type %s" % (self.__class__.__name__, key, self.PROPERTIES[key].__name__))
             self._dirty[key] = value
+            return self
         elif '_%s' % key in self.PROPERTIES:
             raise KeyError("%s is readonly for %s" % (key, self.__class__.__name__))
         else:

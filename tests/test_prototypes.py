@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 """Test the functionality of Prototypes"""
+from copy import copy
 
 import logging
+from pprint import pprint
+
 logger = logging.getLogger(__name__)
 
 from mock import Mock
@@ -86,8 +89,8 @@ def test_generator_setattr_typechecking():
     """
     for type in SAMPLES:
         mock = Mock(Resource)
-        setattr(mock, 'PROPERTIES', {'key': type})
-        setattr(mock, '_dirty', dict())
+        object.__setattr__(mock, 'PROPERTIES', {'key': type})
+        object.__setattr__(mock, '_dirty', dict())
         for t2, samples in SAMPLES.iteritems():
             if not isinstance(t2, type):
                 for sample in samples:
@@ -95,3 +98,51 @@ def test_generator_setattr_typechecking():
             else:
                 for sample in samples:
                     yield setattr_typeerror, mock, 'key', sample
+
+
+def is_attribute_unchanged_data(value):
+    mock = Mock(Resource)
+    object.__setattr__(mock, 'PROPERTIES', {'key': object})
+    object.__setattr__(mock, '_data', {'key': value})
+    object.__setattr__(mock, '_dirty', dict())
+    mock.key = value
+    assert 'key' not in mock._dirty
+
+
+def test_generator_is_attribute_unchanged():
+    """
+    If an attribute is unchanged, we should not store it in 'dirty'.  This should use the 'is' operator to preserve
+    mutability.
+    """
+    for value in [v[0] for k, v in SAMPLES.iteritems()]:
+        yield is_attribute_unchanged_data, value
+
+
+EQ_NOT_IS = [
+    [1000000, 10 ** 6],
+    [[0, 1], [0, 1]],
+    [{}, {}],
+    [{'key': 'value'}, {'key': 'value'}]
+]
+
+
+def eq_attribute_changed_data(value, compare):
+    # sample values are equal
+    assert value == compare
+    # sample values are not the same
+    assert value is not compare
+    mock = Resource()
+    object.__setattr__(mock, 'PROPERTIES', {'key': object})
+    mock.key = compare
+    assert 'key' in mock._dirty
+    # Confirm that the key is updated
+    assert mock.key is compare
+    assert mock.key is not value
+
+
+def test_generator_equal_attribute_replace():
+    """
+    If an attribute is equal but not "is", we need to update it to preserve mutability.
+    """
+    for values in EQ_NOT_IS:
+        yield eq_attribute_changed_data, values[0], values[1]

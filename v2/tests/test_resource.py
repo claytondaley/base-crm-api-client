@@ -43,7 +43,7 @@ def test_generate_properties_invalidconfig():
     for resource in RESOURCES:
         for property_, type_ in resource.PROPERTIES:
             if isinstance(type_, dict):
-                # Complex config, handled elsewhere
+                # Indicates a complex config, handled elsewhere
                 pass
             elif not issubclass(type_, object):
                 yield fail_config, resource, property_, "type %s is not valid" % pformat(type_)
@@ -52,6 +52,7 @@ def test_generate_properties_invalidconfig():
                 yield passes
 
 
+# Complex configuration
 def test_generate_properties_invalidconfig():
     """
     If a property has an invalid (complex) config, fail the test
