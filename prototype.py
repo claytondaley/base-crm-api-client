@@ -289,3 +289,20 @@ class CollectionV1(Collection):
         # to generate ?contact[name]=...
         return _key_coded_dict(data)
 
+
+class SyncService(object):
+    def __init__(self):
+        self.auth = None
+        self.device_id = None
+
+    def headers(self):
+        headers = self.auth.headers()
+        headers['X-Basecrm-Device-UUID'] = self.device_id
+
+    @abc.abstractmethod
+    def acks(self):
+        pass
+
+    @abc.abstractmethod
+    def types(self):
+        pass

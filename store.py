@@ -21,5 +21,4 @@ class Store(object):
 
 class InMemory(Store):
     def __init__(self):
-        self.auth = None
         self.device_id = None

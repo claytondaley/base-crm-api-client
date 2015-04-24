@@ -40,6 +40,14 @@ def create_from_password(username, password, debug=False):
     return api
 
 
+class UnchangedError(Exception):
+    pass
+
+
+class ConcurrencyError(Exception):
+    pass
+
+
 class Rest(object):
     """
     The BaseAPI class is a Mediator that knows how to combine authentication an entity objects to achieve specific API
@@ -54,10 +62,13 @@ class Rest(object):
         if not isinstance(entity, Resource):
             raise TypeError("Can only get() a Resource")
 
+        headers = self.auth.headers(entity.API_VERSION)
+        headers['Content-Type'] = 'application/json'
+
         logger.debug("Preparing GET with:")
         logger.debug("url:  %s" % entity.URL(self.debug))
-        logger.debug("headers:  %s" % self.auth.headers(entity.API_VERSION))
-        response = requests.get(url=entity.URL(self.debug), headers=self.auth.headers(entity.API_VERSION))
+        logger.debug("headers:  %s" % headers)
+        response = requests.get(url=entity.URL(self.debug), headers=headers)
 
         if requests.codes.multiple_choices > response.status_code >= requests.codes.ok:
             print("GET SUCCESS:  %s" % response.text)
@@ -75,7 +86,7 @@ class Rest(object):
 
         data = entity.get_data()
         if len(data) == 0:
-            raise ValueError("No data to save()")
+            raise UnchangedError("No data to save()")
         # Wrap the item in the relevant key
         data = {entity.DATA_PARENT_KEY: data}
 
@@ -104,7 +115,7 @@ class Rest(object):
 
         data = entity.get_data()
         if len(data) == 0:
-            raise ValueError("No data for create()")
+            raise UnchangedError("No data for create()")
         # Wrap the item in the relevant key
         data = {entity.DATA_PARENT_KEY: data}
 
@@ -183,8 +194,66 @@ class Sync(object):
     """
     Sync client...
     """
-    def __init__(self, repository):
-        self.repository = repository
+    @staticmethod
+    def start(sync_service):
+        """
+        Establishes a Sync cursor with the server
+        :param sync_service: an object providing the SyncService interface
+        :return: the id used to pull Sync data for the sync_service's device id
+        """
+        url = 'https://sync.futuresimple.com/api/v1/sync/start.json'
+        headers = sync_service.headers()
+        headers['Content-Type'] = 'application/json'
 
-    def sync(self):
-        pass
+        known_types = []
+
+        types = sync_service.types()
+        for type, version in types.iteritems():
+            known_types.append({
+                'known_type': {
+                    'name': type,
+                    'version': "api.v%d" % version
+                }
+            })
+
+        data = {
+            'data': known_types
+        }
+
+        response = requests.post(url=url, headers=headers, data=data)
+        if 200 <= response.status_code <= 206:
+            return response.json()['data']['id']
+
+    @staticmethod
+    def get_permission(sync_service):
+        url = 'https://sync.futuresimple.com/api/v1/sync/start.json'
+        headers = sync_service.headers()
+        headers['Content-Type'] = 'application/json'
+
+        response = requests.get(url=url, headers=headers)
+        if response.status_code == 204:
+            raise StopIteration("The Sync API reports that no more records are available")
+        # TODO:  Finish logic
+
+    @staticmethod
+    def get_main(sync_service):
+        url = 'https://sync.futuresimple.com/api/v1/sync/start.json'
+        headers = sync_service.headers()
+        headers['Content-Type'] = 'application/json'
+
+        response = requests.get(url=url, headers=headers)
+        if response.status_code == 204:
+            raise StopIteration("The Sync API reports that no more records are available")
+        # TODO:  Finish logic
+
+    @staticmethod
+    def ack(sync_service):
+        url = 'https://sync.futuresimple.com/api/v1/acks.json'
+        headers = sync_service.headers()
+        headers['Content-Type'] = 'application/json'
+
+        acks = sync_service.acks()
+        data = {'ack': acks}
+
+        response = requests.post(url=url, headers=headers, data=data)
+        # TODO:  Finish logic

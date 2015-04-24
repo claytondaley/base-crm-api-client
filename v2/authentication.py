@@ -22,7 +22,6 @@ class Authentication(BaseCrmAuthentication):
 
     def headers(self):
         return {
-            'Accept': 'application/json',
             'Authorization': 'Bearer %s' % self._access_token,
         }
 
