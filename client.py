@@ -1,12 +1,13 @@
 #!/usr/bin/env python
-"""Implements the main client (BaseAPI) for BaseCRM's v2 API"""
+"""Implements clients BaseCRM's APIs"""
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 import json
 import requests
-from authentication import Password, Token
+from v2.authentication import Password, Token
 from prototype import Resource, Collection
 
 __author__ = 'Clayton Daley III'
@@ -26,20 +27,20 @@ def _unicode_dict(d):
 
 def create_from_token(token, debug=False):
     auth = Token(token)
-    api = BaseAPI(auth)
+    api = Rest(auth)
     api.debug = debug
     return api
 
 
 def create_from_password(username, password, debug=False):
     auth = Password(username, password)
-    api = BaseAPI(auth)
+    api = Rest(auth)
     api.get_token(username, password)
     api.debug = debug
     return api
 
 
-class BaseAPI(object):
+class Rest(object):
     """
     The BaseAPI class is a Mediator that knows how to combine authentication an entity objects to achieve specific API
     actions (get, put, post, delete).  It also knows how to handle a variety of common API endpoint errors.
@@ -176,3 +177,14 @@ class BaseAPI(object):
             return entity.format_page(response.json()['items'])
         else:
             print("GET ERROR:  %s" % response.text)
+
+
+class Sync(object):
+    """
+    Sync client...
+    """
+    def __init__(self, repository):
+        self.repository = repository
+
+    def sync(self):
+        pass

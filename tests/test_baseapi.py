@@ -4,7 +4,7 @@
 import logging
 logger = logging.getLogger(__name__)
 
-from client import BaseAPI
+from client import Rest
 from mock import Mock
 from nose.tools import assert_raises
 from prototype import Resource, BaseCrmAuthentication, Collection
@@ -26,7 +26,7 @@ def mock_auth():
 def test_get_without_resource_typeerror():
     """If entity= is not a Resource, get() should raise TypeError"""
     auth = mock_auth()
-    base = BaseAPI(auth)
+    base = Rest(auth)
     # Resource without change
     resource = Mock(Collection)
     # Must have an ID to bypass check
@@ -36,7 +36,7 @@ def test_get_without_resource_typeerror():
 def test_get_without_id_valueerror():
     """If the resource has no changes, get() should raise ValueError"""
     auth = mock_auth()
-    base = BaseAPI(auth)
+    base = Rest(auth)
     # Resource without change
     resource = Mock(Resource)
     # Must have an ID to bypass check
@@ -47,7 +47,7 @@ def test_get_without_id_valueerror():
 def test_save_without_resource_typeerror():
     """If entity= is not a Resource, save() should raise TypeError"""
     auth = mock_auth()
-    base = BaseAPI(auth)
+    base = Rest(auth)
     # Resource without change
     resource = Mock(Collection)
     # Must have an ID to bypass check
@@ -57,7 +57,7 @@ def test_save_without_resource_typeerror():
 def test_save_without_change_valueerror():
     """If the resource has no changes, save() should raise ValueError"""
     auth = mock_auth()
-    base = BaseAPI(auth)
+    base = Rest(auth)
     # Resource without change
     resource = Mock(Resource)
     # Must have an ID to bypass check
@@ -69,7 +69,7 @@ def test_save_without_change_valueerror():
 def test_save_without_id_valueerror():
     """If the resource has no changes, save() should raise ValueError"""
     auth = mock_auth()
-    base = BaseAPI(auth)
+    base = Rest(auth)
     # Resource without change
     resource = Mock(Resource)
     # Must have an ID to bypass check
@@ -80,7 +80,7 @@ def test_save_without_id_valueerror():
 def test_create_without_resource_typeerror():
     """If entity= is not a Resource, create() should raise TypeError"""
     auth = mock_auth()
-    base = BaseAPI(auth)
+    base = Rest(auth)
     # Resource without change
     resource = Mock(Collection)
     # Must have an ID to bypass check
@@ -90,7 +90,7 @@ def test_create_without_resource_typeerror():
 def test_create_without_change_valueerror():
     """If the resource has no changes, create() should raise ValueError"""
     auth = mock_auth()
-    base = BaseAPI(auth)
+    base = Rest(auth)
     resource = Mock(Resource)
     # Must not have an ID to bypass check
     resource.id = None
@@ -101,7 +101,7 @@ def test_create_without_change_valueerror():
 def test_create_with_id_valueerror():
     """If the resource has no changes, create() should raise ValueError"""
     auth = mock_auth()
-    base = BaseAPI(auth)
+    base = Rest(auth)
     resource = Mock(Resource)
     # Must not have an ID to bypass check
     resource.id = 1
@@ -111,7 +111,7 @@ def test_create_with_id_valueerror():
 def test_delete_without_resource_typeerror():
     """If entity= is not a Resource, create() should raise TypeError"""
     auth = mock_auth()
-    base = BaseAPI(auth)
+    base = Rest(auth)
     # Resource without change
     resource = Mock(Collection)
     # Must have an ID to bypass check

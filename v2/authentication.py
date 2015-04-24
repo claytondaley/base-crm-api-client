@@ -15,7 +15,41 @@ __maintainer__ = "Clayton Daley III"
 __status__ = "Development"
 
 
-class Password(BaseCrmAuthentication):
+class Authentication(BaseCrmAuthentication):
+    def __init__(self):
+        super(Authentication, self).__init__()
+        self._refresh_token = None
+
+    def headers(self):
+        return {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer %s' % self._access_token,
+        }
+
+    def refresh(self):
+        if self._refresh_token is None:
+            raise ReferenceError("Refresh key not available.")
+
+        url = "https://api.getbase.com/oauth2/token"
+        data = {
+            'grant_type': 'refresh_token',
+            'refresh_token': self._refresh_token,
+        }
+        headers = {
+            # APP_ID: APP_SECRET
+        }
+
+        logger.debug("Preparing POST with:")
+        logger.debug("url:  %s" % url)
+        logger.debug("format_data_get:  %s" % data)
+        logger.debug("headers:  %s" % headers)
+        response = requests.post(url=url, params=data, headers=headers)
+        logger.debug("Password response:\n%s" % response.text)
+        self._access_token = response.json()['access_token']
+        self._refresh_token = response.json()['refresh_token']
+
+
+class Password(Authentication):
     def __init__(self, username, password):
         """
         Authenticate with an email and password
@@ -46,8 +80,7 @@ class Password(BaseCrmAuthentication):
         self._refresh_token = response.json()['refresh_token']
 
 
-class Token(BaseCrmAuthentication):
+class Token(Authentication):
     def __init__(self, token):
         super(Token, self).__init__()
-        # TODO: Check Token
         self._access_token = token

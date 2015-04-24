@@ -28,55 +28,26 @@ def _key_coded_dict(d):
     return new_dict
 
 
+class AuthenticationError(Exception):
+    pass
+
+
 class IBaseCrmAuthentication(object):
     @abc.abstractmethod
     def headers(self):
         """
         Generate a string for
-        :return: array
         """
-        raise NotImplementedError("No implementation for %s in class %s" %
-                                  (sys._getframe().f_code.co_name, self.__class__.__name__))
+        pass
+
+    @abc.abstractmethod
+    def refresh(self):
+        pass
 
 
 class BaseCrmAuthentication(IBaseCrmAuthentication):
     def __init__(self):
         self._access_token = None
-        self._refresh_token = None
-
-    def headers(self, version=2):
-        if version == 1:
-            return {
-                'X-Pipejump-Auth': self._access_token,
-                'X-Futuresimple-Token': self._access_token
-            }
-        elif version == 2:
-            return {
-                'Accept': 'application/json',
-                'Authorization': 'Bearer %s' % self._access_token,
-            }
-
-    def refresh(self):
-        if self._refresh_token is None:
-            raise ReferenceError("Refresh key not available.")
-
-        url = "https://api.getbase.com/oauth2/token"
-        data = {
-            'grant_type': 'refresh_token',
-            'refresh_token': self._refresh_token,
-        }
-        headers = {
-            # APP_ID: APP_SECRET
-        }
-
-        logger.debug("Preparing POST with:")
-        logger.debug("url:  %s" % url)
-        logger.debug("format_data_get:  %s" % data)
-        logger.debug("headers:  %s" % headers)
-        response = requests.post(url=url, params=data, headers=headers)
-        logger.debug("Password response:\n%s" % response.text)
-        self._access_token = response.json()['access_token']
-        self._refresh_token = response.json()['refresh_token']
 
 
 class Entity(object):
