@@ -5,6 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from prototype import Resource
+from datetime import datetime
 
 __author__ = 'Clayton Daley III'
 __copyright__ = "Copyright 2015, Clayton Daley III"
@@ -26,8 +27,8 @@ class Account(Resource):
         '_time_format': basestring,
         '_timezone': int,
         '_phone': basestring,
-        '_created_at': basestring,
-        '_updated_at': basestring,
+        '_created_at': datetime,
+        '_updated_at': datetime,
     }
 
     def __init__(self):
@@ -83,8 +84,8 @@ class Contact(Resource):
         '_address': Address,
         '_tags': list,
         '_custom_fields': dict,
-        '_created_at': basestring,
-        '_updated_at': basestring,
+        '_created_at': datetime,
+        '_updated_at': datetime,
     }
 
     def __init__(self, entity_id=None):
@@ -145,8 +146,8 @@ class Person(Contact):
         'address': Address,
         'tags': list,
         'custom_fields': dict,
-        '_created_at': basestring,
-        '_updated_at': basestring,
+        '_created_at': datetime,
+        '_updated_at': datetime,
     }
 
     def __init__(self, entity_id=None):
@@ -204,8 +205,8 @@ class Organization(Contact):
         'address': Address,
         'tags': list,
         'custom_fields': dict,
-        '_created_at': basestring,
-        '_updated_at': basestring,
+        '_created_at': datetime,
+        '_updated_at': datetime,
     }
 
     def __init__(self, entity_id=None):
@@ -250,8 +251,8 @@ class Deal(Resource):
         '_organization_id': int,
         'tags': list,
         'custom_fields': dict,
-        '_created_at': basestring,
-        '_updated_at': basestring,
+        '_created_at': datetime,
+        '_updated_at': datetime,
     }
 
 
@@ -317,8 +318,8 @@ class Lead(Resource):
         'address': Address,
         'tags': list,
         'custom_fields': dict,
-        '_created_at': basestring,
-        '_updated_at': basestring,
+        '_created_at': datetime,
+        '_updated_at': datetime,
     }
 
     def format_data_set(self, data):
@@ -338,8 +339,8 @@ class LossReason(Resource):
         '_id': int,
         '_creator_id': int,
         'name': basestring,
-        '_created_at': basestring,
-        '_updated_at': basestring,
+        '_created_at': datetime,
+        '_updated_at': datetime,
     }
 
 
@@ -364,8 +365,8 @@ class Note(Resource):
             ]
         },
         'content': basestring,
-        '_created_at': basestring,
-        '_updated_at': basestring,
+        '_created_at': datetime,
+        '_updated_at': datetime,
     }
 
     def format_data_set(self, data):
@@ -384,13 +385,6 @@ class Note(Resource):
         del data['resource_id']
         return data
 
-    def format_data_get(self, dirty):
-        data = super(Note, self).format_data_get(dirty)
-        if 'resource' in data:
-            data['resource_id'] = data['resource'].id
-            data['resource'] = data['resource'].__class__.__name__.lower()
-        return data
-
 
 class Pipeline(Resource):
     _PATH = "pipelines"
@@ -400,8 +394,8 @@ class Pipeline(Resource):
     PROPERTIES = {
         '_id': int,
         '_name': basestring,
-        '_created_at': basestring,
-        '_updated_at': basestring,
+        '_created_at': datetime,
+        '_updated_at': datetime,
     }
 
 
@@ -414,8 +408,8 @@ class Source(Resource):
         '_id': int,
         '_creator_id': int,
         'name': basestring,
-        '_created_at': basestring,
-        '_updated_at': basestring,
+        '_created_at': datetime,
+        '_updated_at': datetime,
     }
 
 
@@ -432,8 +426,8 @@ class Stage(Resource):
         '_position': int,
         '_likelihood': int,
         '_pipeline_id': int,
-        '_created_at': basestring,
-        '_updated_at': basestring,
+        '_created_at': datetime,
+        '_updated_at': datetime,
     }
 
 
@@ -455,8 +449,8 @@ class Tag(Resource):
             'type': basestring,
             'in': RESOURCE_TYPES
         },
-        '_created_at': basestring,
-        '_updated_at': basestring,
+        '_created_at': datetime,
+        '_updated_at': datetime,
     }
 
 
@@ -487,32 +481,9 @@ class Task(Resource):
         '_overdue': bool,
         'remind_at': basestring,
         'content': basestring,
-        '_created_at': basestring,
-        '_updated_at': basestring,
+        '_created_at': datetime,
+        '_updated_at': datetime,
     }
-
-    def format_data_set(self, data):
-        """
-        Input is:
-        ...
-        'resource_type': {
-            'type': basestring,
-            'in': RESOURCE_TYPES
-        },
-        'resource_id': int,
-        ...
-        """
-        class_ = self.RESOURCE_TYPES[data['resource']]
-        data['resource'] = class_(data['resource_id'])
-        del data['resource_id']
-        return data
-
-    def format_data_get(self, dirty):
-        data = super(Task, self).format_data_get(dirty)
-        if 'resource' in data:
-            data['resource_id'] = data['resource'].id
-            data['resource'] = data['resource'].__class__.__name__.lower()
-        return data
 
 
 class User(Resource):
@@ -541,8 +512,8 @@ class User(Resource):
             'in': ROLE
         },
         '_confirmed': bool,
-        '_created_at': basestring,
-        '_updated_at': basestring,
+        '_created_at': datetime,
+        '_updated_at': datetime,
     }
 
 

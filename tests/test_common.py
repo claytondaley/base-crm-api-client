@@ -4,6 +4,7 @@
 import logging
 logger = logging.getLogger(__name__)
 
+from datetime import datetime
 from v2.resource import Person, Contact, Organization, Deal, Lead, Note, Tag, Account, Address, LossReason, Task, \
     DealContact, Pipeline, Source, Stage, User
 from v2.collection import ContactSet, PersonSet, OrganizationSet, DealSet, LeadSet, LossReasonSet, NoteSet, PipelineSet, \
@@ -42,6 +43,7 @@ SAMPLES = {
     basestring: ['old_string', u'unicode_string'],
     list: [[], ['1', 'a', 1]],
     dict: [{'keyed': 'values'}, {0: 'values'}],
+    datetime: [datetime.now(), datetime(2015, 4, 24, 15, 46, 23)],
 }
 # Required for positive tests on constraints that match Resources
 SAMPLES.update({r: [mock_resource(r)] for r in RESOURCES})

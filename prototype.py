@@ -6,8 +6,8 @@ logger = logging.getLogger(__name__)
 
 import abc
 from copy import deepcopy
-import requests
-import sys
+from datetime import datetime
+import dateutil
 
 __author__ = 'Clayton Daley III'
 __copyright__ = "Copyright 2015, Clayton Daley III"
@@ -93,6 +93,8 @@ class Resource(Entity):
         }
     """
     DATA_PARENT_KEY = 'data'
+    # For import reasons, classes need to setup a local table
+    RESOURCE_TYPES = {}
 
     def __init__(self, entity_id=None):
         if entity_id is not None and not isinstance(entity_id, int):
@@ -189,6 +191,34 @@ class Resource(Entity):
          - The v2 Contact object wraps the address up into an Address object
          - In v1, tags are sent as comma-separated lists that should be exploded into real lists
         """
+        for key, value in data.iteritems():
+            if isinstance(value, dict):
+                pass
+            elif key not in self.PROPERTIES:
+                # Assume this is a composite key to be used by another process like `resource`
+                pass
+            elif key == 'resource':
+                """
+                Input is:
+                ...
+                'resource_type': {
+                    'type': basestring,
+                    'in': RESOURCE_TYPES
+                },
+                'resource_id': int,
+                ...
+                """
+                class_ = self.RESOURCE_TYPES[data['resource']]
+                data['resource'] = class_(data['resource_id'])
+            elif issubclass(self.PROPERTIES[key], Resource):
+                instance = value()
+                instance.set_data(data[key])
+                data[key] = instance
+            elif issubclass(self.PROPERTIES[key], datetime.datetime):
+                data[key] = dateutil.parser.parse(data[key])
+        if 'resource_id' in data:
+            del data['resource_id']
+
         return data  # returned for setting and chaining convenience
 
     def get_data(self):
@@ -197,8 +227,18 @@ class Resource(Entity):
         return {self.DATA_PARENT_KEY: data}
 
     def format_data_get(self, dirty):
-        data = deepcopy(dirty)
-        # If needed, ID is encoded in URL
+        data = dict()
+
+        for key, value in dirty.iteritems():
+            if key == 'resource':
+                data['resource_id'] = dirty['resource'].id
+                data['resource'] = dirty['resource'].__class__.__name__.lower()
+            elif isinstance(value, Resource):
+                data[key] = value.get_data()
+            elif issubclass(value, datetime):
+                data[key] = value.isoformat()
+            else:
+                data[key] = dirty[key]
         return data
 
 

@@ -4,7 +4,7 @@
 import logging
 logger = logging.getLogger(__name__)
 
-from client import Rest
+from client import Rest, UnchangedError
 from mock import Mock
 from nose.tools import assert_raises
 from prototype import Resource, BaseCrmAuthentication, Collection
@@ -54,7 +54,7 @@ def test_save_without_resource_typeerror():
     assert_raises(TypeError, base.save, resource)
 
 
-def test_save_without_change_valueerror():
+def test_save_without_change_unchangederror():
     """If the resource has no changes, save() should raise ValueError"""
     auth = mock_auth()
     base = Rest(auth)
@@ -63,7 +63,7 @@ def test_save_without_change_valueerror():
     # Must have an ID to bypass check
     resource.id = 1
     resource.get_data.return_value = dict()
-    assert_raises(ValueError, base.save, resource)
+    assert_raises(UnchangedError, base.save, resource)
 
 
 def test_save_without_id_valueerror():
@@ -87,7 +87,7 @@ def test_create_without_resource_typeerror():
     assert_raises(TypeError, base.create, resource)
 
 
-def test_create_without_change_valueerror():
+def test_create_without_change_unchangederror():
     """If the resource has no changes, create() should raise ValueError"""
     auth = mock_auth()
     base = Rest(auth)
@@ -95,7 +95,7 @@ def test_create_without_change_valueerror():
     # Must not have an ID to bypass check
     resource.id = None
     resource.get_data.return_value = dict()
-    assert_raises(ValueError, base.create, resource)
+    assert_raises(UnchangedError, base.create, resource)
 
 
 def test_create_with_id_valueerror():
@@ -114,7 +114,6 @@ def test_delete_without_resource_typeerror():
     base = Rest(auth)
     # Resource without change
     resource = Mock(Collection)
-    # Must have an ID to bypass check
     assert_raises(TypeError, base.delete, resource)
 
 
