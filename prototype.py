@@ -216,6 +216,7 @@ class Resource(Entity):
                 data[key] = instance
             elif issubclass(self.PROPERTIES[key], datetime.datetime):
                 data[key] = dateutil.parser.parse(data[key])
+        # This could be adjusted to delete a dynamic list of keys if the resource_id logic was ever proved unreliable
         if 'resource_id' in data:
             del data['resource_id']
 
